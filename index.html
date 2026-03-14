@@ -1,0 +1,1420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phase 1: Causality Foundation — BiRAGAS Video Presentation</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+--navy:#0B1D3A;--dark:#0F2B5B;--med:#1A478A;--accent:#0096D6;--teal:#00B4A0;
+--green:#2ECC71;--gold:#F5A623;--red:#E74C3C;--orange:#F3941E;--purple:#8E44AD;
+--light:#F0F4F8;--white:#FFF;--gray:#7F8C8D;--text:#C0D0E0;--dim:#A0B4C8;
+}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Segoe UI',system-ui,sans-serif}
+canvas#particles{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
+#presentation{position:relative;width:100%;height:100%;z-index:1}
+.scene{position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;visibility:hidden;
+  display:flex;flex-direction:column;justify-content:center;padding:60px 80px;transition:opacity .8s}
+.scene.active{opacity:1;visibility:visible}
+.scene::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--accent),var(--teal))}
+.scene::after{content:'';position:absolute;bottom:0;left:0;right:0;height:40px;background:rgba(8,20,42,.9);
+  display:flex;align-items:center}
+
+/* Animations */
+@keyframes fadeUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeLeft{from{opacity:0;transform:translateX(-40px)}to{opacity:1;transform:translateX(0)}}
+@keyframes fadeRight{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+@keyframes scaleIn{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
+@keyframes slideDown{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
+@keyframes barGrow{from{width:0}to{width:var(--bar-w)}}
+@keyframes typeIn{from{opacity:0;letter-spacing:8px}to{opacity:1;letter-spacing:normal}}
+@keyframes glowPulse{0%,100%{box-shadow:0 0 20px rgba(0,150,214,.3)}50%{box-shadow:0 0 40px rgba(0,150,214,.6)}}
+
+.anim{opacity:0;animation-fill-mode:both;animation-duration:.7s}
+[data-a="fu"]{animation-name:fadeUp}
+[data-a="fl"]{animation-name:fadeLeft}
+[data-a="fr"]{animation-name:fadeRight}
+[data-a="si"]{animation-name:scaleIn}
+[data-a="sd"]{animation-name:slideDown}
+[data-a="bg"]{animation-name:barGrow}
+
+/* Typography */
+.title{font-size:clamp(28px,3.5vw,48px);font-weight:800;color:var(--white);line-height:1.15;margin-bottom:8px}
+.subtitle{font-size:clamp(14px,1.5vw,20px);color:var(--dim);line-height:1.4;margin-bottom:20px}
+.section-title{font-size:clamp(24px,3vw,38px);font-weight:700;color:var(--white);margin-bottom:6px}
+.section-sub{font-size:clamp(13px,1.3vw,17px);color:var(--dim);margin-bottom:24px}
+
+/* Cards */
+.card{background:rgba(15,43,91,.7);border-radius:12px;padding:20px 24px;backdrop-filter:blur(8px);
+  border:1px solid rgba(0,150,214,.15)}
+.card-title{font-size:16px;font-weight:700;color:var(--accent);margin-bottom:10px}
+.card-text{font-size:13px;color:var(--text);line-height:1.5}
+
+/* Grid */
+.grid{display:grid;gap:16px}
+.grid-2{grid-template-columns:1fr 1fr}
+.grid-3{grid-template-columns:1fr 1fr 1fr}
+.grid-4{grid-template-columns:1fr 1fr 1fr 1fr}
+.grid-5{grid-template-columns:repeat(5,1fr)}
+
+/* Badges & pills */
+.badge{display:inline-block;padding:4px 14px;border-radius:20px;font-size:12px;font-weight:700;letter-spacing:1px}
+.accent-line{width:100px;height:3px;background:var(--accent);margin:8px 0 16px;border-radius:2px}
+
+/* Flow arrows */
+.flow-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.flow-box{padding:12px 18px;border-radius:10px;text-align:center;font-size:13px;font-weight:600;color:var(--white);min-width:120px}
+.flow-arrow{color:var(--gray);font-size:22px}
+
+/* Evidence bars */
+.ebar{display:flex;align-items:center;gap:12px;margin:6px 0}
+.ebar-label{min-width:180px;font-size:13px;font-weight:600;color:var(--white)}
+.ebar-track{flex:1;height:20px;background:rgba(26,42,58,.8);border-radius:10px;overflow:hidden}
+.ebar-fill{height:100%;border-radius:10px;animation:barGrow 1.2s ease-out both}
+.ebar-val{min-width:40px;font-size:14px;font-weight:700;text-align:right}
+
+/* Layer boxes */
+.layer-box{border-radius:12px;padding:16px;border:2px solid;text-align:center}
+.layer-box h3{font-size:15px;margin-bottom:4px}
+.layer-box p{font-size:11px;line-height:1.4}
+.layer-box ul{text-align:left;font-size:11px;margin-top:8px;padding-left:16px;line-height:1.6}
+
+/* Code blocks */
+.code{background:rgba(10,20,40,.8);border-radius:8px;padding:14px 18px;font-family:'Fira Code','Consolas',monospace;
+  font-size:12px;line-height:1.6;color:var(--text);overflow-x:auto;border:1px solid rgba(0,150,214,.1)}
+.code .kw{color:var(--teal)}
+.code .str{color:var(--gold)}
+.code .num{color:var(--green)}
+.code .cmt{color:var(--gray)}
+
+/* MR method cards */
+.mr-card{border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+.mr-card-head{padding:10px;text-align:center;font-weight:700;font-size:14px;color:var(--white)}
+.mr-card-body{padding:14px;font-size:11px;color:var(--text);line-height:1.5;flex:1;background:rgba(15,43,91,.7)}
+
+/* Constraint cards */
+.constraint{border-radius:10px;overflow:hidden}
+.constraint-head{padding:8px 14px;font-weight:700;font-size:13px;color:var(--white)}
+.constraint-body{padding:12px 14px;font-size:10.5px;color:var(--text);line-height:1.5;background:rgba(15,43,91,.7)}
+.constraint-body .red{color:var(--red);font-weight:600}
+.constraint-body .grn{color:var(--green);font-weight:600}
+
+/* Bottom bar */
+.bottom-bar{position:absolute;bottom:0;left:0;right:0;height:40px;background:rgba(8,20,42,.95);
+  display:flex;align-items:center;padding:0 30px;font-size:11px;color:var(--gray);z-index:5}
+.bottom-bar .right{margin-left:auto}
+
+/* Controls */
+#controls{position:fixed;bottom:0;left:0;right:0;height:56px;background:rgba(8,14,26,.95);
+  display:flex;align-items:center;padding:0 20px;gap:12px;z-index:100;border-top:1px solid rgba(0,150,214,.2)}
+#controls button{background:none;border:none;color:var(--white);cursor:pointer;font-size:18px;padding:6px 10px;
+  border-radius:6px;transition:background .2s}
+#controls button:hover{background:rgba(0,150,214,.2)}
+#controls button.active{color:var(--accent)}
+#timeline{flex:1;height:4px;background:rgba(255,255,255,.15);border-radius:2px;cursor:pointer;position:relative}
+#timeline-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .3s}
+#time-display{font-size:12px;color:var(--gray);min-width:80px;text-align:center;font-family:monospace}
+#speed-btn{font-size:13px!important;min-width:42px;text-align:center}
+#scene-counter{font-size:12px;color:var(--gray);min-width:60px;text-align:center}
+
+/* Subtitle bar */
+#subtitle-bar{position:fixed;bottom:60px;left:50%;transform:translateX(-50%);max-width:80%;
+  background:rgba(0,0,0,.75);color:var(--white);padding:8px 24px;border-radius:8px;font-size:15px;
+  text-align:center;line-height:1.4;z-index:99;opacity:0;transition:opacity .3s;pointer-events:none}
+#subtitle-bar.visible{opacity:1}
+
+/* Voice menu */
+#voice-menu{position:fixed;bottom:60px;right:20px;background:rgba(15,27,50,.95);border:1px solid rgba(0,150,214,.3);
+  border-radius:10px;padding:12px;max-height:250px;overflow-y:auto;z-index:101;display:none;min-width:220px}
+#voice-menu.show{display:block}
+#voice-menu label{display:block;padding:4px 8px;font-size:12px;color:var(--text);cursor:pointer;border-radius:4px}
+#voice-menu label:hover{background:rgba(0,150,214,.15)}
+#voice-menu label input{margin-right:8px}
+
+/* Responsive */
+@media(max-width:1200px){.scene{padding:40px 50px}.grid-5{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:900px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr}.scene{padding:30px}}
+</style>
+</head>
+<body>
+
+<canvas id="particles"></canvas>
+
+<div id="presentation">
+
+<!-- SCENE 0: TITLE -->
+<div class="scene active" data-dur="18">
+  <div style="position:absolute;left:60px;top:100px;width:5px;height:55%;background:var(--accent);border-radius:3px" class="anim" data-a="fu" data-d="0.2"></div>
+  <div style="margin-left:30px">
+    <div class="badge anim" data-a="sd" data-d="0.3" style="background:var(--accent);color:#fff;margin-bottom:16px">PHASE 1 &nbsp;|&nbsp; CAUSALITY FOUNDATION</div>
+    <h1 class="title anim" data-a="fl" data-d="0.5" style="font-size:clamp(32px,4vw,54px)">DAG Construction &<br>Mendelian Randomization Validation</h1>
+    <p class="subtitle anim" data-a="fl" data-d="0.8">Building Consensus Causal Directed Acyclic Graphs from Multi-Modal Biological Evidence<br>with Genetic Instrument Validation via 5 MR Methods + 4 Sensitivity Analyses</p>
+    <div class="grid-2 anim" data-a="fu" data-d="1.2" style="max-width:800px;margin-top:24px">
+      <div class="card"><div class="card-title">Module 1: DAGBuilder</div><div class="card-text">9 data streams, 4-layer topology, patient-level instantiation, consensus aggregation</div></div>
+      <div class="card"><div class="card-title">Module 2: MRValidator</div><div class="card-text">IVW, MR-Egger, Weighted Median, Weighted Mode, MR-PRESSO validation</div></div>
+    </div>
+    <p class="anim" data-a="fu" data-d="1.6" style="color:var(--gray);font-size:13px;margin-top:30px">Ayass Bioscience LLC &nbsp;|&nbsp; BiRAGAS Platform &nbsp;|&nbsp; Version 2.0</p>
+  </div>
+</div>
+
+<!-- SCENE 1: ARCHITECTURE OVERVIEW -->
+<div class="scene" data-dur="35">
+  <div class="section-title anim" data-a="fl" data-d="0.2">Architecture Overview</div>
+  <div class="accent-line anim" data-a="fl" data-d="0.3"></div>
+  <p class="section-sub anim" data-a="fu" data-d="0.4">Phase 1 transforms 9 heterogeneous biological data streams into a validated, consensus causal DAG through a 5-stage pipeline.</p>
+  <div class="flow-row anim" data-a="fu" data-d="0.6" style="margin-bottom:24px">
+    <div class="flow-box" style="background:var(--accent)">1. Data<br>Ingestion<br><small style="opacity:.7">9 streams</small></div><span class="flow-arrow">&#9654;</span>
+    <div class="flow-box" style="background:var(--med)">2. Skeleton<br>Construction<br><small style="opacity:.7">4-layer topology</small></div><span class="flow-arrow">&#9654;</span>
+    <div class="flow-box" style="background:var(--teal)">3. Patient<br>Instantiation<br><small style="opacity:.7">Per-sample DAGs</small></div><span class="flow-arrow">&#9654;</span>
+    <div class="flow-box" style="background:var(--green)">4. Consensus<br>Aggregation<br><small style="opacity:.7">Frequency filtering</small></div><span class="flow-arrow">&#9654;</span>
+    <div class="flow-box" style="background:var(--gold)">5. MR<br>Validation<br><small style="opacity:.7">5 methods + sensitivity</small></div>
+  </div>
+  <div class="grid-2 anim" data-a="fu" data-d="1.0" style="gap:14px">
+    <div class="card"><div class="card-title">Shared Data Structure</div><div class="card-text">NetworkX DiGraph — single graph object flows through all 23 modules across 7 phases</div></div>
+    <div class="card"><div class="card-title">Bayesian Confidence</div><div class="card-text">C = 1 - (1-C_current)(1-C_new) — evidence stacks monotonically, never overwrites</div></div>
+    <div class="card"><div class="card-title">Causal, Not Correlational</div><div class="card-text">Genetic anchors (GWAS, MR) enforce directionality; statistical edges are subordinate</div></div>
+    <div class="card"><div class="card-title">Patient-Level Resolution</div><div class="card-text">Individual DAGs capture per-patient biology before consensus aggregation</div></div>
+  </div>
+</div>
+
+<!-- SCENE 2: CONFIG & DATA LOADING -->
+<div class="scene" data-dur="38">
+  <div class="section-title anim" data-a="fl" data-d="0.2">DAGBuilder: Configuration & Data Loading</div>
+  <div class="accent-line anim" data-a="fl" data-d="0.3"></div>
+  <div class="grid-2" style="gap:20px;align-items:start">
+    <div class="card anim" data-a="fl" data-d="0.4">
+      <div class="card-title">DAGBuilderConfig — 14 Parameters</div>
+      <div class="code" style="font-size:11px;line-height:1.5">
+<span class="kw">consensus_threshold</span>: <span class="num">0.20</span> <span class="cmt"># min freq for edge</span>
+<span class="kw">correlation_threshold</span>: <span class="num">0.4</span> <span class="cmt"># min |r| coexpr</span>
+<span class="kw">gwas_pval_threshold</span>: <span class="num">5e-8</span> <span class="cmt"># genome-wide sig</span>
+<span class="kw">mr_pval_threshold</span>: <span class="num">0.05</span> <span class="cmt"># MR cutoff</span>
+<span class="kw">granger_q_threshold</span>: <span class="num">0.05</span> <span class="cmt"># Granger FDR</span>
+<span class="kw">granger_rescue_q</span>: <span class="num">0.01</span> <span class="cmt"># strict rescue</span>
+<span class="kw">z_score_prior</span>: <span class="num">0.75</span> <span class="cmt"># activity (prior)</span>
+<span class="kw">z_score_default</span>: <span class="num">1.0</span> <span class="cmt"># activity (other)</span>
+<span class="kw">program_activity</span>: <span class="num">0.5</span> <span class="cmt"># pathway gate</span>
+<span class="kw">phenotype_corr</span>: <span class="num">0.3</span> <span class="cmt"># disease link</span>
+<span class="kw">ace_driver</span>: <span class="num">-0.1</span> <span class="cmt"># driver ACE</span>
+<span class="kw">ace_min_delta</span>: <span class="num">0.2</span> <span class="cmt"># asymmetry delta</span>
+      </div>
+    </div>
+    <div class="card anim" data-a="fr" data-d="0.5">
+      <div class="card-title">DataLoader — 9 Data Streams</div>
+      <div class="card-text" style="line-height:1.7">
+        <b style="color:var(--gold)">1. Transcriptomics</b> — DEGs, raw counts, metadata<br>
+        <b style="color:var(--gold)">2. GWAS Catalog</b> — Genome-wide significant loci (P&lt;5e-8)<br>
+        <b style="color:var(--gold)">3. Mendelian Randomization</b> — Causal effect estimates<br>
+        <b style="color:var(--gold)">4. eQTL Data</b> — SNP-gene expression effects<br>
+        <b style="color:var(--gold)">5. SIGNOR Pathways</b> — Curated signaling interactions<br>
+        <b style="color:var(--gold)">6. Pathway Enrichment</b> — REACTOME/KEGG/GO<br>
+        <b style="color:var(--gold)">7. Temporal Data</b> — Time-series + Granger causality<br>
+        <b style="color:var(--gold)">8. Perturbation/CRISPR</b> — ACE + essentiality<br>
+        <b style="color:var(--gold)">9. Deconvolution</b> — Cell-type proportions + markers
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCENE 3: 4-LAYER TOPOLOGY -->
+<div class="scene" data-dur="38">
+  <div class="section-title anim" data-a="fl" data-d="0.2">4-Layer Topological Architecture</div>
+  <div class="accent-line anim" data-a="fl" data-d="0.3"></div>
+  <div class="grid-4 anim" data-a="fu" data-d="0.5" style="gap:16px;margin-bottom:20px">
+    <div class="layer-box" style="border-color:var(--purple);background:rgba(142,68,173,.12)">
+      <h3 style="color:var(--purple)">Layer 0: SOURCE</h3><p style="color:var(--text)">SNP Nodes</p>
+      <ul style="color:var(--text)"><li>GWAS catalog variants</li><li>eQTL study SNPs</li><li>is_anchor = True</li><li>Types: GWAS, eQTL, Both</li></ul>
+    </div>
+    <div class="layer-box" style="border-color:var(--accent);background:rgba(0,150,214,.1)">
+      <h3 style="color:var(--accent)">Layer 1: REGULATORY</h3><p style="color:var(--text)">Gene Nodes</p>
+      <ul style="color:var(--text)"><li>DEGs + genetic genes</li><li>20+ node attributes</li><li>causal_tier classification</li><li>ACE, essentiality, expression</li></ul>
+    </div>
+    <div class="layer-box" style="border-color:var(--teal);background:rgba(0,180,160,.1)">
+      <h3 style="color:var(--teal)">Layer 2: PROGRAM</h3><p style="color:var(--text)">Pathway/Cell Nodes</p>
+      <ul style="color:var(--text)"><li>REACTOME/KEGG/GO_BP</li><li>Cell types (Bisque)</li><li>Ontology classification</li><li>p-value, FDR, regulation</li></ul>
+    </div>
+    <div class="layer-box" style="border-color:var(--red);background:rgba(231,76,60,.1)">
+      <h3 style="color:var(--red)">Layer 3: TRAIT</h3><p style="color:var(--text)">Disease Outcome</p>
+      <ul style="color:var(--text)"><li>Disease_Activity node</li><li>Clinical outcome</li><li>Terminal sink node</li><li>Patient activity scores</li></ul>
+    </div>
+  </div>
+  <div class="flow-row anim" data-a="fu" data-d="1.0">
+    <div style="padding:8px 16px;border-radius:8px;background:rgba(142,68,173,.3);color:var(--purple);font-weight:600;font-size:12px">SNP→Gene<br><small>genetic_regulation</small></div><span class="flow-arrow">|</span>
+    <div style="padding:8px 16px;border-radius:8px;background:rgba(0,150,214,.2);color:var(--accent);font-weight:600;font-size:12px">Gene→Gene<br><small>regulatory</small></div><span class="flow-arrow">|</span>
+    <div style="padding:8px 16px;border-radius:8px;background:rgba(0,180,160,.2);color:var(--teal);font-weight:600;font-size:12px">Gene→Pathway<br><small>program_membership</small></div><span class="flow-arrow">|</span>
+    <div style="padding:8px 16px;border-radius:8px;background:rgba(231,76,60,.2);color:var(--red);font-weight:600;font-size:12px">Gene→Disease<br><small>phenotype_driver</small></div><span class="flow-arrow">|</span>
+    <div style="padding:8px 16px;border-radius:8px;background:rgba(243,148,30,.2);color:var(--orange);font-weight:600;font-size:12px">Disease→Gene<br><small>reactive_biomarker</small></div>
+  </div>
+</div>
+
+<!-- SCENE 4: EVIDENCE WEIGHT SYSTEM -->
+<div class="scene" data-dur="35">
+  <div class="section-title anim" data-a="fl" data-d="0.2">Evidence Weight System</div>
+  <div class="accent-line anim" data-a="fl" data-d="0.3"></div>
+  <p class="section-sub anim" data-a="fu" data-d="0.4">Each evidence type carries a calibrated weight reflecting its strength for establishing causality.</p>
+  <div class="anim" data-a="fu" data-d="0.6" style="max-width:900px">
+    <div class="ebar"><span class="ebar-label">Mendelian Randomization</span><div class="ebar-track"><div class="ebar-fill" style="--bar-w:95%;background:var(--gold);animation-delay:0.8s"></div></div><span class="ebar-val" style="color:var(--gold)">0.95</span></div>
+    <div class="ebar"><span class="ebar-label">GWAS Catalog</span><div class="ebar-track"><div class="ebar-fill" style="--bar-w:90%;background:var(--accent);animation-delay:1.0s"></div></div><span class="ebar-val" style="color:var(--accent)">0.90</span></div>
+    <div class="ebar"><span class="ebar-label">SIGNOR Database</span><div class="ebar-track"><div class="ebar-fill" style="--bar-w:90%;background:var(--accent);animation-delay:1.2s"></div></div><span class="ebar-val" style="color:var(--accent)">0.90</span></div>
+    <div class="ebar"><span class="ebar-label">CRISPR Perturbation</span><div class="ebar-track"><div class="ebar-fill" style="--bar-w:85%;background:var(--green);animation-delay:1.4s"></div></div><span class="ebar-val" style="color:var(--green)">0.85</span></div>
+    <div class="ebar"><span class="ebar-label">eQTL Studies</span><div class="ebar-track"><div class="ebar-fill" style="--bar-w:85%;background:var(--green);animation-delay:1.6s"></div></div><span class="ebar-val" style="color:var(--green)">0.85</span></div>
+    <div class="ebar"><span class="ebar-label">Database Curation</span><div class="ebar-track"><div class="ebar-fill" style="--bar-w:80%;background:var(--teal);animation-delay:1.8s"></div></div><span class="ebar-val" style="color:var(--teal)">0.80</span></div>
+    <div class="ebar"><span class="ebar-label">Temporal / Granger</span><div class="ebar-track"><div class="ebar-fill" style="--bar-w:65%;background:var(--orange);animation-delay:2.0s"></div></div><span class="ebar-val" style="color:var(--orange)">0.65</span></div>
+    <div class="ebar"><span class="ebar-label">Statistical</span><div class="ebar-track"><div class="ebar-fill" style="--bar-w:35%;background:var(--red);animation-delay:2.2s"></div></div><span class="ebar-val" style="color:var(--red)">0.35</span></div>
+  </div>
+  <div class="card anim" data-a="fu" data-d="2.5" style="margin-top:20px;max-width:900px;border:1px solid rgba(245,166,35,.3)">
+    <div class="card-title" style="color:var(--gold)">Bayesian Confidence Aggregation</div>
+    <div class="card-text" style="font-family:monospace;font-size:14px;color:var(--gold)">C_final = 1 - (1 - C_current) × (1 - C_new) &nbsp;&nbsp;|&nbsp;&nbsp; Capped at 0.99</div>
+  </div>
+</div>
+
+<!-- SCENE 5: SKELETON CONSTRUCTION -->
+<div class="scene" data-dur="35">
+  <div class="section-title anim" data-a="fl" data-d="0.2">Skeleton Construction</div>
+  <div class="accent-line anim" data-a="fl" data-d="0.3"></div>
+  <div class="grid-3" style="gap:14px">
+    <div class="card anim" data-a="fu" data-d="0.4" style="border-left:3px solid var(--purple)">
+      <div class="card-title" style="color:var(--purple)">Step 1: SNP Source Nodes</div>
+      <div class="card-text">Union of GWAS + eQTL SNPs. Each typed as GWAS_Catalog, eQTL_Study, or both. Marked is_anchor=True for directionality enforcement.</div>
+    </div>
+    <div class="card anim" data-a="fu" data-d="0.6" style="border-left:3px solid var(--accent)">
+      <div class="card-title" style="color:var(--accent)">Step 2: Gene Regulatory Nodes</div>
+      <div class="card-text">All genes from gene_list (DEG + GWAS + MR union). 20+ attributes per gene: expression, ACE, essentiality, alignment, causal_tier.</div>
+    </div>
+    <div class="card anim" data-a="fu" data-d="0.8" style="border-left:3px solid var(--teal)">
+      <div class="card-title" style="color:var(--teal)">Step 3: Program Nodes</div>
+      <div class="card-text">REACTOME/KEGG/WikiPathway + GO_BP + cell types from Bisque deconvolution. Ontology: Main_Class / Sub_Class hierarchy.</div>
+    </div>
+    <div class="card anim" data-a="fu" data-d="1.0" style="border-left:3px solid var(--red)">
+      <div class="card-title" style="color:var(--red)">Step 4: Disease Trait Node</div>
+      <div class="card-text">Single node: Disease_Activity. Layer='trait', type='clinical_outcome'. Terminal sink in the causal DAG topology.</div>
+    </div>
+    <div class="card anim" data-a="fu" data-d="1.2" style="border-left:3px solid var(--gold)">
+      <div class="card-title" style="color:var(--gold)">Step 5: Edge Construction</div>
+      <div class="card-text">Co-expression: |r|>0.4 with STATISTICAL weight. Pathway membership: gene→pathway (DATABASE=0.80). Cell markers: deconvolution signature.</div>
+    </div>
+    <div class="card anim" data-a="fu" data-d="1.4" style="border-left:3px solid var(--green)">
+      <div class="card-title" style="color:var(--green)">Confidence Formula</div>
+      <div class="card-text" style="font-family:monospace;font-size:12px">scaled = (|r| - 0.4) / (1.0 - 0.4)<br>base_prob = min(0.99, scaled × W['STATISTICAL'])<br>Both directions (u→v, v→u) added</div>
+    </div>
+  </div>
+</div>
+
+<!-- SCENE 6: PATIENT-LEVEL DAG -->
+<div class="scene" data-dur="38">
+  <div class="section-title anim" data-a="fl" data-d="0.2">Patient-Level DAG Instantiation</div>
+  <div class="accent-line anim" data-a="fl" data-d="0.3"></div>
+  <p class="section-sub anim" data-a="fu" data-d="0.4">Each patient sample generates its own DAG by filtering the global skeleton through expression z-scores.</p>
+  <div class="flow-row anim" data-a="fu" data-d="0.6" style="margin-bottom:20px">
+    <div class="flow-box" style="background:var(--accent)">Expression<br>Processing<br><small>log1p transform</small></div><span class="flow-arrow">&#9654;</span>
+    <div class="flow-box" style="background:var(--teal)">Z-Score<br>Computation<br><small>z=(x-μ)/σ</small></div><span class="flow-arrow">&#9654;</span>
+    <div class="flow-box" style="background:var(--green)">Activity<br>Gating<br><small>dual thresholds</small></div><span class="flow-arrow">&#9654;</span>
+    <div class="flow-box" style="background:var(--gold)">Program<br>Scoring<br><small>mean z-scores</small></div><span class="flow-arrow">&#9654;</span>
+    <div class="flow-box" style="background:var(--red)">Subgraph<br>Extraction<br><small>active nodes only</small></div>
+  </div>
+  <div class="grid-3 anim" data-a="fu" data-d="1.0" style="gap:14px">
+    <div class="card">
+      <div class="card-title">Dual Z-Score Thresholds</div>
+      <div class="card-text">Prior genes (GWAS hit or ACE ≤ -0.1): threshold = <b style="color:var(--gold)">0.75</b><br>Default genes: threshold = <b style="color:var(--gold)">1.0</b><br><br>Lower bar for genetically-anchored genes preserves weak-but-causal signals.</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Program Activity Scoring</div>
+      <div class="card-text">For each pathway/cell-type:<br>activity = mean(z_scores of member genes)<br>Active if |activity| > <b style="color:var(--gold)">0.5</b><br><br>Disease node always active.</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Subgraph Extraction</div>
+      <div class="card-text">patient_dag = skeleton.subgraph(active_nodes).copy()<br><br>Preserves all edge attributes. Each patient DAG is a filtered view. Typical: 30-70% nodes survive.</div>
+    </div>
+  </div>
+</div>
+
+<!-- SCENE 7: CONSENSUS AGGREGATION -->
+<div class="scene" data-dur="38">
+  <div class="section-title anim" data-a="fl" data-d="0.2">Consensus Aggregation Algorithm</div>
+  <div class="accent-line anim" data-a="fl" data-d="0.3"></div>
+  <div class="grid-2" style="gap:20px;align-items:start">
+    <div class="card anim" data-a="fl" data-d="0.4">
+      <div class="card-title">_aggregate_dags() — Core Algorithm</div>
+      <div class="code" style="font-size:11px">
+<span class="kw">FOR</span> each patient_dag:
+  <span class="kw">FOR</span> each edge (u, v, data):
+    track count, weight_sum, evidence union
+    track confidence_score_sum
+
+<span class="kw">FOR</span> each tracked edge:
+  frequency = count / n_patients
+  <span class="kw">IF</span> frequency > <span class="num">0.20</span>:
+    base_prob = confidence_sum / count
+    freq_bonus = freq × <span class="num">0.35</span> × <span class="num">0.5</span>
+    final = <span class="str">Bayesian_agg</span>(base, freq_bonus)
+    <span class="str">ADD</span> edge to consensus
+
+Copy node attributes from global_skeleton
+Run <span class="str">phenotype_arbitration</span>()
+Run <span class="str">inject_priors</span>()
+Run <span class="str">apply_advanced_constraints</span>()
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="card anim" data-a="fr" data-d="0.6">
+        <div class="card-title">Consensus Metrics</div>
+        <div class="card-text">
+          • n_nodes — Total nodes in consensus<br>
+          • n_edges — Edges surviving threshold<br>
+          • n_gwas_roots — GWAS-anchored genes<br>
+          • n_snp_nodes — Source layer SNPs<br>
+          • n_mr_edges — MR-validated causal edges<br>
+          • n_perturbation_drivers — CRISPR-confirmed
+        </div>
+      </div>
+      <div class="card anim" data-a="fr" data-d="0.9">
+        <div class="card-title" style="color:var(--gold)">Post-Aggregation Pipeline</div>
+        <div class="card-text">
+          <b style="color:var(--teal)">1. Phenotype Arbitration</b> — Driver vs. biomarker<br>
+          <b style="color:var(--teal)">2. Prior Injection</b> — MR, eQTL, SIGNOR, Granger<br>
+          <b style="color:var(--teal)">3. Advanced Constraints</b> — 5 biological rules<br>
+          <b style="color:var(--teal)">4. Serialization</b> — Sets → lists for JSON
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCENE 8: PHENOTYPE ARBITRATION -->
+<div class="scene" data-dur="38">
+  <div class="section-title anim" data-a="fl" data-d="0.2">Phenotype Arbitration: Drivers vs. Reactive Biomarkers</div>
+  <div class="accent-line anim" data-a="fl" data-d="0.3"></div>
+  <p class="section-sub anim" data-a="fu" data-d="0.4">Does a gene CAUSE disease, or does disease CAUSE the gene's expression change? This determines edge direction.</p>
+  <div class="grid-2 anim" data-a="fu" data-d="0.6" style="gap:20px">
+    <div class="card" style="border-top:4px solid var(--green)">
+      <div class="card-title" style="color:var(--green);font-size:18px">CAUSAL DRIVER: Gene → Disease</div>
+      <div class="card-text" style="line-height:1.7">
+        <b style="color:var(--gold)">Criteria (ANY):</b><br>
+        • is_gwas_hit = True<br>
+        • Has MR evidence<br>
+        • perturbation_ace ≤ -0.1<br><br>
+        <b style="color:var(--gold)">Edge properties:</b><br>
+        • edge_type = 'phenotype_driver'<br>
+        • mechanism = 'causal_disease_driver'<br>
+        • evidence: 'causal_anchor_supported'<br><br>
+        <b style="color:var(--red)">Reverse edge (Disease→Gene) is REMOVED</b>
+      </div>
+    </div>
+    <div class="card" style="border-top:4px solid var(--orange)">
+      <div class="card-title" style="color:var(--orange);font-size:18px">REACTIVE BIOMARKER: Disease → Gene</div>
+      <div class="card-text" style="line-height:1.7">
+        <b style="color:var(--gold)">Criteria:</b><br>
+        • Correlates with disease BUT<br>
+        • No GWAS, no MR, ACE > -0.1<br>
+        • Expression changes are CONSEQUENCE<br><br>
+        <b style="color:var(--gold)">Edge properties:</b><br>
+        • edge_type = 'reactive_biomarker'<br>
+        • mechanism = 'disease_induced_expression'<br>
+        • evidence: 'lacks_causal_anchors'<br><br>
+        <b style="color:var(--red)">Forward edge (Gene→Disease) is REMOVED</b>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCENE 9: PRIOR INJECTION -->
+<div class="scene" data-dur="40">
+  <div class="section-title anim" data-a="fl" data-d="0.2">Prior Injection Pipeline</div>
+  <div class="accent-line anim" data-a="fl" data-d="0.3"></div>
+  <div class="grid-2" style="gap:14px">
+    <div class="card anim" data-a="fl" data-d="0.4" style="border-left:3px solid var(--gold)">
+      <div class="card-title" style="color:var(--gold)">MR Evidence Injection</div>
+      <div class="card-text" style="line-height:1.6">
+        For each gene with MR results:<br>
+        • mechanism based on beta direction<br>
+        • P-value scaling: p&lt;0.001→1.0, p&lt;0.01→0.90, else 0.80<br>
+        • final_prob = W['MR'](0.95) × scalar<br>
+        • <span style="color:var(--red);font-weight:600">REMOVES reverse edge</span><br>
+        • Adds 'mendelian_randomization_causality'
+      </div>
+    </div>
+    <div class="card anim" data-a="fr" data-d="0.5" style="border-left:3px solid var(--accent)">
+      <div class="card-title" style="color:var(--accent)">eQTL Edge Injection</div>
+      <div class="card-text" style="line-height:1.6">
+        For each SNP-Gene pair:<br>
+        • base_prob = W['EQTL'](0.85) × min(1, |beta|)<br>
+        • If gene in coloc_proxy (GWAS∩eQTL):<br>
+        &nbsp;&nbsp;Bayesian_agg(base, W['GWAS']) → massive boost<br>
+        • Creates SNP→Gene edges<br>
+        • Evidence: 'eqtl_study_support'
+      </div>
+    </div>
+    <div class="card anim" data-a="fl" data-d="0.7" style="border-left:3px solid var(--teal)">
+      <div class="card-title" style="color:var(--teal)">SIGNOR Interaction Injection</div>
+      <div class="card-text" style="line-height:1.6">
+        For each curated physical interaction:<br>
+        • New edge: confidence=0.1 (seed)<br>
+        • Existing edge: ADD 'signor_physical_interaction'<br>
+        • Full SIGNOR boost applied later in constraint #5
+      </div>
+    </div>
+    <div class="card anim" data-a="fr" data-d="0.9" style="border-left:3px solid var(--orange)">
+      <div class="card-title" style="color:var(--orange)">Granger Causality Injection</div>
+      <div class="card-text" style="line-height:1.6">
+        Significant pairs (q&lt;0.05):<br>
+        • base_prob = W['STAT'] × min(1, F/40)<br>
+        • <b style="color:var(--red)">ONE-NODE RESCUE</b> (q&lt;0.01):<br>
+        &nbsp;&nbsp;Missing partner recovered from skeleton
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCENE 10: 5 CONSTRAINT RULES -->
+<div class="scene" data-dur="42">
+  <div class="section-title anim" data-a="fl" data-d="0.2">5 Advanced Constraint Rules</div>
+  <div class="accent-line anim" data-a="fl" data-d="0.3"></div>
+  <div class="grid-3" style="gap:12px">
+    <div class="constraint anim" data-a="fu" data-d="0.4">
+      <div class="constraint-head" style="background:var(--gold)">1. Genetic Anchor Flow</div>
+      <div class="constraint-body">GWAS root → non-root: <span class="grn">BOOST</span> confidence with W['GWAS']×0.8.<br>Reverse edge: <span class="red">PENALIZE</span> conf×(1-W['GWAS']×0.5).<br>Mark reverse as 'potential_feedback_loop'.</div>
+    </div>
+    <div class="constraint anim" data-a="fu" data-d="0.6">
+      <div class="constraint-head" style="background:var(--teal)">2. Hybrid Temporal Arbitration</div>
+      <div class="constraint-body">Granger + impulse: <span class="red">REMOVE</span> reverse, 'spatiotemporal_causality_verified'.<br>Granger only: <span class="grn">BOOST</span> + penalize reverse.<br>Impulse only: <span class="red">REMOVE</span> reverse.</div>
+    </div>
+    <div class="constraint anim" data-a="fu" data-d="0.8">
+      <div class="constraint-head" style="background:var(--green)">3. Perturbation Asymmetry</div>
+      <div class="constraint-body">ACE_u ≤ -0.1 AND ACE_v ≥ -0.1 AND |Δ| ≥ 0.2:<br>Enforce u→v direction, <span class="red">REMOVE</span> reverse.<br>mechanism='fitness_driver_regulation'<br>dynamic_w = W['CRISPR']×min(1,|ACE|).</div>
+    </div>
+    <div class="constraint anim" data-a="fu" data-d="1.0">
+      <div class="constraint-head" style="background:var(--purple)">4. Cellular Context Veto</div>
+      <div class="constraint-body">Different cell types:<br>If ligand-receptor pair: <span class="grn">RETYPE</span> to 'paracrine_signaling'.<br>Otherwise: <span class="red">REMOVE</span> edge + reverse (intracellular only).</div>
+    </div>
+    <div class="constraint anim" data-a="fu" data-d="1.2">
+      <div class="constraint-head" style="background:var(--accent)">5. SIGNOR Arbitration Bonus</div>
+      <div class="constraint-body">Curated SIGNOR interaction:<br><span class="grn">BOOST</span>: Bayesian_agg(current, 0.90).<br><span class="red">REMOVE</span> reverse edge (curated direction wins).<br>Strongest physical evidence override.</div>
+    </div>
+  </div>
+</div>
+
+<!-- SCENE 11: BAYESIAN CONFIDENCE -->
+<div class="scene" data-dur="35">
+  <div class="section-title anim" data-a="fl" data-d="0.2">Bayesian Confidence Aggregation</div>
+  <div class="accent-line anim" data-a="fl" data-d="0.3"></div>
+  <div class="card anim" data-a="si" data-d="0.5" style="text-align:center;padding:30px;border:2px solid rgba(245,166,35,.3);margin-bottom:24px;max-width:900px;animation:glowPulse 3s infinite">
+    <div style="font-size:28px;font-weight:800;color:var(--gold);font-family:monospace;margin-bottom:8px">C<sub>final</sub> = 1 − (1 − C<sub>current</sub>) × (1 − C<sub>new</sub>)</div>
+    <div style="color:var(--dim);font-size:14px">Inputs clamped to [0, 0.99] &nbsp;|&nbsp; Output capped at 0.99</div>
+  </div>
+  <div class="grid-4 anim" data-a="fu" data-d="0.8" style="gap:14px;margin-bottom:20px">
+    <div class="card" style="text-align:center;border-top:3px solid var(--green)"><div class="card-title" style="color:var(--green)">Monotonic</div><div class="card-text">Evidence can only increase confidence, never decrease it.</div></div>
+    <div class="card" style="text-align:center;border-top:3px solid var(--accent)"><div class="card-title" style="color:var(--accent)">Sub-additive</div><div class="card-text">Returns diminish near 1.0. Two 0.5 sources = 0.75.</div></div>
+    <div class="card" style="text-align:center;border-top:3px solid var(--teal)"><div class="card-title" style="color:var(--teal)">Order-Independent</div><div class="card-text">Same result regardless of processing order.</div></div>
+    <div class="card" style="text-align:center;border-top:3px solid var(--gold)"><div class="card-title" style="color:var(--gold)">Bounded [0, 0.99]</div><div class="card-text">Prevents degenerate certainty claims.</div></div>
+  </div>
+  <div class="flow-row anim" data-a="fu" data-d="1.2" style="gap:20px">
+    <div class="card" style="flex:1;text-align:center"><div style="color:var(--green);font-weight:700;font-size:14px">≥ 0.85</div><div style="color:var(--green)">Very High</div></div>
+    <div class="card" style="flex:1;text-align:center"><div style="color:var(--teal);font-weight:700;font-size:14px">≥ 0.65</div><div style="color:var(--teal)">High</div></div>
+    <div class="card" style="flex:1;text-align:center"><div style="color:var(--gold);font-weight:700;font-size:14px">≥ 0.40</div><div style="color:var(--gold)">Medium</div></div>
+    <div class="card" style="flex:1;text-align:center"><div style="color:var(--red);font-weight:700;font-size:14px">&lt; 0.40</div><div style="color:var(--red)">Low</div></div>
+  </div>
+  <div class="card anim" data-a="fu" data-d="1.6" style="margin-top:16px;max-width:900px;font-family:monospace;font-size:12px;color:var(--text)">
+    <b style="color:var(--gold)">Example:</b> GWAS(0.90) + eQTL(0.85) + SIGNOR(0.90) = 1−(0.10×0.15×0.10) = <b style="color:var(--green)">0.9985 → 0.99</b>
+  </div>
+</div>
+
+<!-- SCENE 12: MR INSTRUMENT SELECTION -->
+<div class="scene" data-dur="38">
+  <div class="section-title anim" data-a="fl" data-d="0.2">MRValidator: Instrument Selection</div>
+  <div class="badge anim" data-a="sd" data-d="0.3" style="background:var(--gold);color:#000;margin-bottom:16px">MODULE 2 &nbsp;|&nbsp; MENDELIAN RANDOMIZATION VALIDATION</div>
+  <div class="grid-2" style="gap:20px;align-items:start">
+    <div class="card anim" data-a="fl" data-d="0.5">
+      <div class="card-title">prepare_instruments() Pipeline</div>
+      <div class="code" style="font-size:11px">
+<span class="cmt"># 1. Filter by gene</span>
+gene_data = eqtl[eqtl.gene == target]
+
+<span class="cmt"># 2. Genome-wide significance</span>
+gene_data = gene_data[pvalue < <span class="num">5e-8</span>]
+
+<span class="cmt"># 3. Compute instrument strength</span>
+r2 = β² / (β² + se² × n)
+F  = r2 × (n-2) / (1-r2)
+
+<span class="cmt"># 4. Strong instrument gate</span>
+<span class="kw">KEEP IF</span> F ≥ <span class="num">10</span>
+
+<span class="cmt"># 5. Sort by F-statistic</span>
+instruments.sort(F, descending)
+
+<span class="cmt"># 6. LD pruning (r² < 0.001)</span>
+<span class="kw">FOR</span> each: check independence
+  from all previously kept
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="card anim" data-a="fr" data-d="0.6">
+        <div class="card-title">MRValidatorConfig</div>
+        <div class="code" style="font-size:11px">
+<span class="kw">gwas_pval</span>: <span class="num">5e-8</span>  <span class="kw">f_stat_min</span>: <span class="num">10</span>
+<span class="kw">mr_pval</span>: <span class="num">0.05</span>   <span class="kw">min_instruments</span>: <span class="num">3</span>
+<span class="kw">egger_intercept</span>: <span class="num">0.05</span>
+<span class="kw">heterogeneity</span>: <span class="num">0.05</span>
+<span class="kw">bootstrap</span>: <span class="num">1000</span>  <span class="kw">ld_r2</span>: <span class="num">0.001</span>
+<span class="kw">presso_sims</span>: <span class="num">1000</span>
+<span class="kw">presso_outlier</span>: <span class="num">0.05</span>
+        </div>
+      </div>
+      <div class="card anim" data-a="fr" data-d="0.9">
+        <div class="card-title" style="color:var(--gold)">IV Assumptions Enforced</div>
+        <div class="card-text" style="line-height:1.7">
+          <b style="color:var(--teal)">1. Relevance:</b> F≥10 (strong instruments)<br>
+          <b style="color:var(--teal)">2. Independence:</b> LD pruning r²&lt;0.001<br>
+          <b style="color:var(--teal)">3. Exclusion:</b> Egger intercept test<br>
+          <b style="color:var(--teal)">4. Monotonicity:</b> Assumed
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCENE 13: 5 MR METHODS -->
+<div class="scene" data-dur="45">
+  <div class="section-title anim" data-a="fl" data-d="0.2">5 Mendelian Randomization Methods</div>
+  <div class="accent-line anim" data-a="fl" data-d="0.3"></div>
+  <div class="grid-5 anim" data-a="fu" data-d="0.5" style="gap:12px">
+    <div class="mr-card"><div class="mr-card-head" style="background:var(--gold)">IVW</div><div class="mr-card-body">
+      <b>Inverse Variance Weighted</b><br><br>
+      w<sub>i</sub> = 1/se<sub>y</sub>²<br>
+      β = Σ(w·bx·by) / Σ(w·bx²)<br>
+      se = √(1/Σ(w·bx²))<br><br>
+      Primary method. Assumes all instruments valid. Min: 3.
+    </div></div>
+    <div class="mr-card"><div class="mr-card-head" style="background:var(--accent)">MR-Egger</div><div class="mr-card-body">
+      <b>Weighted Regression</b><br><br>
+      by = α + β·bx<br>
+      W = diag(1/se²)<br>
+      β̂ = (X'WX)⁻¹X'Wy<br><br>
+      Intercept≠0 detects pleiotropy. InSIDE assumption. Min: 4.
+    </div></div>
+    <div class="mr-card"><div class="mr-card-head" style="background:var(--teal)">Weighted Median</div><div class="mr-card-body">
+      <b>Robust Median</b><br><br>
+      ratios = by/bx<br>
+      weights = bx²/se²<br>
+      β = weighted median<br><br>
+      Valid if ≥50% weight from valid IVs. Bootstrap SE (1000).
+    </div></div>
+    <div class="mr-card"><div class="mr-card-head" style="background:var(--green)">Weighted Mode</div><div class="mr-card-body">
+      <b>Kernel Density</b><br><br>
+      h = 0.9·σ·n⁻⁰·²<br>
+      density = Σ(w·N(grid|r,h))<br>
+      β = grid[argmax]<br><br>
+      Valid if largest cluster is valid. Bootstrap SE (1000).
+    </div></div>
+    <div class="mr-card"><div class="mr-card-head" style="background:var(--red)">MR-PRESSO</div><div class="mr-card-body">
+      <b>Outlier Detection</b><br><br>
+      RSS = Σ(w·(by-β·bx)²)<br>
+      1000 permutations<br>
+      p = mean(null≥obs)<br><br>
+      Identifies outlier IVs (|resid|>3·se). Re-runs IVW clean.
+    </div></div>
+  </div>
+</div>
+
+<!-- SCENE 14: SENSITIVITY ANALYSES -->
+<div class="scene" data-dur="40">
+  <div class="section-title anim" data-a="fl" data-d="0.2">4 Sensitivity Analyses</div>
+  <div class="accent-line anim" data-a="fl" data-d="0.3"></div>
+  <div class="grid-2" style="gap:16px">
+    <div class="card anim" data-a="fl" data-d="0.4" style="border-top:4px solid var(--gold)">
+      <div class="card-title" style="color:var(--gold)">Cochran's Q Heterogeneity</div>
+      <div class="card-text" style="line-height:1.7">
+        Tests if instrument-specific estimates are homogeneous.<br><br>
+        <span style="font-family:monospace;font-size:12px;color:var(--dim)">Q = Σ w<sub>i</sub>(ratio<sub>i</sub> − β<sub>IVW</sub>)²<br>p = 1 − χ²<sub>cdf</sub>(Q, df=n−1)<br>I² = max(0, (Q−df)/Q × 100)</span><br><br>
+        Heterogeneity detected if <b style="color:var(--gold)">p &lt; 0.05</b>
+      </div>
+    </div>
+    <div class="card anim" data-a="fr" data-d="0.5" style="border-top:4px solid var(--accent)">
+      <div class="card-title" style="color:var(--accent)">Steiger Directionality</div>
+      <div class="card-text" style="line-height:1.7">
+        Confirms causal direction: exposure → outcome.<br><br>
+        <span style="font-family:monospace;font-size:12px;color:var(--dim)">z<sub>exp</sub> = arctanh(√r²<sub>exp</sub>)<br>z<sub>out</sub> = arctanh(√r²<sub>out</sub>)<br>z<sub>stat</sub> = (z<sub>exp</sub> − z<sub>out</sub>) / √(2/997)</span><br><br>
+        <b style="color:var(--red)">CRITICAL: Must pass for validation</b>
+      </div>
+    </div>
+    <div class="card anim" data-a="fl" data-d="0.7" style="border-top:4px solid var(--teal)">
+      <div class="card-title" style="color:var(--teal)">Leave-One-Out</div>
+      <div class="card-text" style="line-height:1.7">
+        Checks if any single instrument drives the result.<br><br>
+        <span style="font-family:monospace;font-size:12px;color:var(--dim)">FOR i in 1..n:<br>&nbsp;&nbsp;subset = instruments \ {i}<br>&nbsp;&nbsp;run_ivw(subset) → β, se, p</span><br><br>
+        Dramatic change → instrument may be invalid. Min: 4.
+      </div>
+    </div>
+    <div class="card anim" data-a="fr" data-d="0.9" style="border-top:4px solid var(--green)">
+      <div class="card-title" style="color:var(--green)">Egger Intercept</div>
+      <div class="card-text" style="line-height:1.7">
+        Tests for directional pleiotropy.<br><br>
+        <span style="font-family:monospace;font-size:12px;color:var(--dim)">H₀: intercept = 0 (no pleiotropy)<br>H₁: intercept ≠ 0 (pleiotropy)</span><br><br>
+        p &lt; 0.05 → IVW biased, use Egger slope instead.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCENE 15: VALIDATION DECISION LOGIC -->
+<div class="scene" data-dur="38">
+  <div class="section-title anim" data-a="fl" data-d="0.2">MR Validation Decision Logic</div>
+  <div class="accent-line anim" data-a="fl" data-d="0.3"></div>
+  <div class="grid-2" style="gap:20px;align-items:start">
+    <div class="card anim" data-a="fl" data-d="0.4">
+      <div class="card-title">validate_edge() Decision Algorithm</div>
+      <div class="code" style="font-size:11px">
+<span class="cmt"># 1. Prepare instruments</span>
+instruments = prepare_instruments(gene)
+<span class="kw">IF</span> len < <span class="num">3</span>: <span class="str">RETURN</span> validated=False
+
+<span class="cmt"># 2. Run all 5 MR methods</span>
+ivw   = run_ivw(instruments)
+egger = run_egger(instruments)
+wm    = run_weighted_median(instruments)
+mode  = run_weighted_mode(instruments)
+presso= run_mr_presso(instruments)
+
+<span class="cmt"># 3. Run sensitivity tests</span>
+cochran = run_cochran_q(ivw.beta)
+steiger = run_steiger_test()
+loo     = run_leave_one_out()
+
+<span class="cmt"># 4. Count significant methods</span>
+methods_sig = count(p < <span class="num">0.05</span>)
+dir_consistent = all same sign
+
+<span class="cmt"># 5. Decision gates</span>
+<span class="str">VALIDATED</span> = ivw.p < <span class="num">0.05</span>
+         AND methods_sig ≥ <span class="num">2</span>
+         AND steiger.correct_direction
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="card anim" data-a="fr" data-d="0.6" style="border:2px solid var(--green)">
+        <div class="card-title" style="color:var(--green);font-size:18px">VALIDATED = True</div>
+        <div class="card-text" style="font-size:14px;line-height:2">
+          &#10003; IVW p-value &lt; 0.05<br>
+          &#10003; At least 2 of 4 methods significant<br>
+          &#10003; Steiger confirms correct direction
+        </div>
+      </div>
+      <div class="card anim" data-a="fr" data-d="0.9" style="border:2px solid var(--teal)">
+        <div class="card-title" style="color:var(--teal);font-size:18px">SENSITIVITY PASSED = True</div>
+        <div class="card-text" style="font-size:14px;line-height:2">
+          &#10003; No heterogeneity (Cochran Q p≥0.05)<br>
+          &#10003; No pleiotropy (Egger intercept p≥0.05)<br>
+          &#10003; Direction consistent (all same sign)<br>
+          &#10003; Steiger confirms direction
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCENE 16: DAG EDGE ANNOTATION -->
+<div class="scene" data-dur="35">
+  <div class="section-title anim" data-a="fl" data-d="0.2">DAG Edge Annotation by MR Validation</div>
+  <div class="accent-line anim" data-a="fl" data-d="0.3"></div>
+  <p class="section-sub anim" data-a="fu" data-d="0.4">validate_dag_edges() applies MR results back to the consensus DAG, annotating each Gene→Disease edge.</p>
+  <div class="grid-2" style="gap:20px;align-items:start">
+    <div class="card anim" data-a="fl" data-d="0.5">
+      <div class="card-title">Annotation Process</div>
+      <div class="code" style="font-size:11px">
+<span class="cmt"># Target: regulatory→Disease edges</span>
+genes = [u <span class="kw">for</span> (u,v) <span class="kw">in</span> edges
+         <span class="kw">if</span> v == Disease_Activity
+         <span class="kw">and</span> node[u].layer == 'regulatory']
+
+<span class="kw">FOR</span> gene <span class="kw">in</span> genes:
+  result = validate_edge(gene, eqtl)
+
+  edge[<span class="str">'mr_validated'</span>] = True/False
+  edge[<span class="str">'mr_beta'</span>]      = IVW beta
+  edge[<span class="str">'mr_pval'</span>]      = IVW p-value
+  edge[<span class="str">'mr_method'</span>]    = 'IVW'
+  edge[<span class="str">'mr_sensitivity'</span>] = True/False
+
+  <span class="kw">IF</span> validated:
+    evidence.add(<span class="str">'mr_validated'</span>)
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="card anim" data-a="fr" data-d="0.6">
+        <div class="card-title" style="color:var(--gold)">Edge Attributes Written</div>
+        <div class="card-text" style="line-height:1.8;font-family:monospace;font-size:12px">
+          <span style="color:var(--teal)">mr_validated</span> <span style="color:var(--gray)">(bool)</span><br>
+          <span style="color:var(--teal)">mr_beta</span> <span style="color:var(--gray)">(float) IVW estimate</span><br>
+          <span style="color:var(--teal)">mr_pval</span> <span style="color:var(--gray)">(float) IVW p-value</span><br>
+          <span style="color:var(--teal)">mr_method</span> <span style="color:var(--gray)">(str) 'IVW'</span><br>
+          <span style="color:var(--teal)">mr_sensitivity_passed</span> <span style="color:var(--gray)">(bool)</span><br>
+          <span style="color:var(--teal)">evidence[]</span> <span style="color:var(--gray)">+= 'mr_validated'</span>
+        </div>
+      </div>
+      <div class="card anim" data-a="fr" data-d="0.9">
+        <div class="card-title">Validation Summary</div>
+        <div class="card-text" style="line-height:1.8">
+          • total_tested — Gene→Disease edges tested<br>
+          • validated — Passed all criteria<br>
+          • failed — Failed validation<br>
+          • sensitivity_passed — All sensitivity ok<br>
+          • per_gene — Full 5-method details
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCENE 17: DATA FLOW DIAGRAM -->
+<div class="scene" data-dur="35">
+  <div class="section-title anim" data-a="fl" data-d="0.2">Complete Data Flow</div>
+  <div class="accent-line anim" data-a="fl" data-d="0.3"></div>
+  <div class="grid-2" style="gap:20px;align-items:start">
+    <div class="card anim" data-a="fl" data-d="0.4" style="padding:16px">
+      <div class="card-title">End-to-End Pipeline</div>
+      <div class="code" style="font-size:10.5px;line-height:1.5;border:none;padding:8px">
+         RAW DATA INPUTS
+  ┌──────────────┬──────────────┐
+  │Transcriptomics│GWAS/MR/eQTL │
+  │Pathways/GO_BP │SIGNOR/Temporal│
+  │Deconvolution  │CRISPR/Drugs  │
+  └──────┬────────┴──────┬───────┘
+         ▼               ▼
+  ┌──────────────────────────────┐
+  │   DataLoader.load_all()     │
+  │   Gene resolution + synonym │
+  └────────────┬─────────────────┘
+               ▼
+  ┌──────────────────────────────┐
+  │ _build_layered_skeleton()   │
+  │ 4-layer + co-expression     │
+  └────────────┬─────────────────┘
+               ▼
+  ┌──────────────────────────────┐
+  │ _instantiate_patient_dag()  │
+  │ × N samples (z-score gate)  │
+  └────────────┬─────────────────┘
+               ▼
+  ┌──────────────────────────────┐
+  │ _aggregate_dags() + priors  │
+  │ + 5 constraint rules        │
+  └────────────┬─────────────────┘
+               ▼
+  ┌──────────────────────────────┐
+  │ MRValidator.validate_edges()│
+  │ 5 methods + 4 sensitivity   │
+  └────────────┬─────────────────┘
+               ▼
+      <span class="str">VALIDATED CONSENSUS DAG</span>
+   → Phase 2: Network Analysis
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="card anim" data-a="fr" data-d="0.6">
+        <div class="card-title" style="color:var(--gold)">Output Formats</div>
+        <div class="card-text" style="line-height:1.8">
+          <b style="color:var(--teal)">consensus_causal_dag.json</b><br>Full graph node-link format + meta<br><br>
+          <b style="color:var(--teal)">consensus_dag_nodes.csv</b><br>All nodes with 20+ attributes<br><br>
+          <b style="color:var(--teal)">consensus_dag_edges.csv</b><br>All edges with evidence, confidence<br><br>
+          <b style="color:var(--teal)">NetworkX DiGraph</b><br>In-memory → Phase 2+
+        </div>
+      </div>
+      <div class="card anim" data-a="fr" data-d="0.9">
+        <div class="card-title">Downstream Consumers</div>
+        <div class="card-text" style="line-height:1.7">
+          Phase 2: CentralityCalculator, TargetScorer<br>
+          Phase 3: CausalityTester, DirectionalityTester<br>
+          Phase 4: CounterfactualSimulator<br>
+          Phase 5: TargetRanker, DruggabilityScorer<br>
+          Phase 6: CohortStratifier, DAGComparator<br>
+          Phase 7: EvidenceInspector, LLMArbitrator
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCENE 18: DAG ATTRIBUTE REGISTRY -->
+<div class="scene" data-dur="35">
+  <div class="section-title anim" data-a="fl" data-d="0.2">DAG Attribute Registry</div>
+  <div class="accent-line anim" data-a="fl" data-d="0.3"></div>
+  <div class="grid-2" style="gap:20px;align-items:start">
+    <div class="card anim" data-a="fl" data-d="0.4">
+      <div class="card-title">Node Attributes (20+)</div>
+      <div class="card-text" style="line-height:1.6;font-size:12px">
+        <b style="color:var(--purple)">Source Layer:</b> layer, type, is_anchor, evidence_source<br>
+        <b style="color:var(--accent)">Regulatory Layer:</b> expression_baseline, expression_diseased, expression_log2fc, expression_trend, is_gwas_hit, genetic_confidence_score, perturbation_ace, essentiality_tag, systemic_toxicity_risk, therapeutic_alignment, therapeutic_recommendation, strategy_type, evidence_count, causal_tier<br>
+        <b style="color:var(--teal)">Program Layer:</b> source (REACTOME/KEGG/GO), pathway_id, p_value, fdr, regulation, main_class, sub_class, marker_count<br>
+        <b style="color:var(--red)">Trait Layer:</b> measure, patient_activity
+      </div>
+    </div>
+    <div class="card anim" data-a="fr" data-d="0.6">
+      <div class="card-title">Edge Attributes (10+)</div>
+      <div class="card-text" style="line-height:1.6;font-size:12px">
+        <b style="color:var(--gold)">Core:</b> weight, edge_type, mechanism, evidence (list), confidence_score, confidence (label), frequency<br><br>
+        <b style="color:var(--gold)">MR Annotations:</b> mr_validated, mr_beta, mr_pval, mr_method, mr_sensitivity_passed<br><br>
+        <b style="color:var(--gold)">Direction:</b> direction (forward/inverse/upregulated/downregulated)<br><br>
+        <b style="color:var(--gold)">Evidence Tags:</b> transcriptomic_coexpression, mendelian_randomization_causality, gwas_anchor_downstream_flow, spatiotemporal_causality_verified, perturbation_asymmetry, signor_physical_interaction, eqtl_study_support, var_granger_predictivity, pseudotime_progression
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCENE 19: SUMMARY -->
+<div class="scene" data-dur="30">
+  <div class="section-title anim" data-a="fl" data-d="0.2">Summary & Key Innovations</div>
+  <div class="accent-line anim" data-a="fl" data-d="0.3"></div>
+  <div class="grid-3" style="gap:14px;margin-bottom:20px">
+    <div class="card anim" data-a="fu" data-d="0.4" style="border-left:4px solid var(--accent)">
+      <div class="card-title" style="font-size:32px;color:var(--accent)">1</div>
+      <div class="card-title">Multi-Modal Integration</div>
+      <div class="card-text">9 data streams unified into a single causal graph through weighted Bayesian aggregation.</div>
+    </div>
+    <div class="card anim" data-a="fu" data-d="0.6" style="border-left:4px solid var(--teal)">
+      <div class="card-title" style="font-size:32px;color:var(--teal)">2</div>
+      <div class="card-title">Patient-Level Resolution</div>
+      <div class="card-text">Individual DAGs capture per-patient biology with dual z-score thresholds before consensus.</div>
+    </div>
+    <div class="card anim" data-a="fu" data-d="0.8" style="border-left:4px solid var(--green)">
+      <div class="card-title" style="font-size:32px;color:var(--green)">3</div>
+      <div class="card-title">Direction Enforcement</div>
+      <div class="card-text">5 constraint rules resolve driver vs. biomarker using genetic, temporal, and perturbation evidence.</div>
+    </div>
+    <div class="card anim" data-a="fu" data-d="1.0" style="border-left:4px solid var(--gold)">
+      <div class="card-title" style="font-size:32px;color:var(--gold)">4</div>
+      <div class="card-title">Comprehensive MR</div>
+      <div class="card-text">5 MR methods + 4 sensitivity analyses provide robust causal inference under varied assumptions.</div>
+    </div>
+    <div class="card anim" data-a="fu" data-d="1.2" style="border-left:4px solid var(--purple)">
+      <div class="card-title" style="font-size:32px;color:var(--purple)">5</div>
+      <div class="card-title">Bayesian Confidence</div>
+      <div class="card-text">C=1−(1−C1)(1−C2) ensures monotonic, sub-additive evidence accumulation capped at 0.99.</div>
+    </div>
+    <div class="card anim" data-a="fu" data-d="1.4" style="border-left:4px solid var(--red)">
+      <div class="card-title" style="font-size:32px;color:var(--red)">6</div>
+      <div class="card-title">Fully Automated</div>
+      <div class="card-text">From raw files to validated causal graph with zero manual curation — fully reproducible pipeline.</div>
+    </div>
+  </div>
+  <div class="card anim" data-a="si" data-d="1.8" style="text-align:center;border:2px solid rgba(0,150,214,.4);padding:20px">
+    <div style="font-size:18px;font-weight:700;color:var(--accent)">Phase 1 Output: Validated Consensus Causal DAG</div>
+    <div style="color:var(--dim);margin-top:6px;font-size:13px">NetworkX DiGraph with 20+ node attributes, 10+ edge attributes, Bayesian confidence, MR validation — ready for Phase 2+</div>
+    <div style="color:var(--gray);margin-top:10px;font-size:12px">Ayass Bioscience LLC &nbsp;|&nbsp; BiRAGAS Platform &nbsp;|&nbsp; Phase 1: Causality Foundation</div>
+  </div>
+</div>
+
+</div><!-- /presentation -->
+
+<!-- SUBTITLE BAR -->
+<div id="subtitle-bar"></div>
+
+<!-- VOICE MENU -->
+<div id="voice-menu"></div>
+
+<!-- CONTROLS -->
+<div id="controls">
+  <button id="prev-btn" title="Previous (←)">&#9664;&#9664;</button>
+  <button id="play-btn" title="Play/Pause (Space)">&#9654;</button>
+  <button id="next-btn" title="Next (→)">&#9654;&#9654;</button>
+  <div id="timeline"><div id="timeline-fill" style="width:0%"></div></div>
+  <span id="time-display">0:00 / 0:00</span>
+  <span id="scene-counter">1 / 20</span>
+  <button id="speed-btn" title="Speed">1x</button>
+  <button id="voice-btn" title="Voice (V)" class="active">&#128362;</button>
+  <button id="sub-btn" title="Subtitles (C)" class="active">CC</button>
+  <button id="fs-btn" title="Fullscreen (F)">&#x26F6;</button>
+</div>
+
+<script>
+// ── NARRATION SCRIPTS (sentence arrays) ──
+const narration = [
+  // Scene 0: Title
+  [
+    "Welcome to Phase 1 of the BiRAGAS Causality Framework: Causality Foundation.",
+    "This phase builds the entire causal graph from scratch, transforming raw multi-modal biological data into a validated consensus Directed Acyclic Graph.",
+    "Phase 1 consists of two core modules.",
+    "Module 1, the DAGBuilder, ingests 9 different data streams, constructs a 4-layer topology, instantiates patient-level DAGs, and aggregates them into a consensus.",
+    "Module 2, the MRValidator, applies 5 Mendelian Randomization methods plus 4 sensitivity analyses to validate every causal edge.",
+    "Together, these modules form the foundation upon which all downstream analyses depend."
+  ],
+  // Scene 1: Architecture Overview
+  [
+    "Let's begin with the architecture overview.",
+    "Phase 1 operates as a 5-stage pipeline.",
+    "Stage 1 is data ingestion, loading 9 heterogeneous biological data streams.",
+    "Stage 2 is skeleton construction, building a 4-layer directed graph.",
+    "Stage 3 instantiates individual patient DAGs by filtering through expression z-scores.",
+    "Stage 4 aggregates these patient DAGs into a consensus using frequency-based thresholds.",
+    "And Stage 5 validates causal edges using Mendelian Randomization.",
+    "Four key design principles govern this pipeline.",
+    "First, the entire framework shares a single NetworkX DiGraph that flows through all 23 modules across 7 phases.",
+    "Second, confidence aggregation uses a Bayesian formula: C equals 1 minus the product of 1 minus C current and 1 minus C new.",
+    "Third, the system is fundamentally causal, not correlational. Genetic anchors enforce directionality.",
+    "Fourth, patient-level resolution captures individual biology before consensus."
+  ],
+  // Scene 2: Config & Data Loading
+  [
+    "The DAGBuilder is configured through 14 parameters that control every aspect of graph construction.",
+    "The consensus threshold of 0.20 means an edge must appear in at least 20 percent of patient DAGs to be included.",
+    "The correlation threshold of 0.4 sets the minimum absolute correlation for co-expression edges.",
+    "The GWAS p-value threshold follows the genome-wide significance standard of 5 times 10 to the minus 8.",
+    "The DataLoader class handles 9 distinct data streams.",
+    "These include transcriptomics with DEGs and raw counts, GWAS catalog hits, Mendelian Randomization results, eQTL data, SIGNOR pathway interactions, pathway enrichment from REACTOME, KEGG, and Gene Ontology, temporal data with Granger causality, CRISPR perturbation data with ACE scores and gene essentiality, and cell deconvolution signatures.",
+    "Gene resolution handles synonyms and Ensembl identifiers, mapping everything to canonical HGNC symbols."
+  ],
+  // Scene 3: 4-Layer Topology
+  [
+    "The DAG follows a strict 4-layer topological architecture.",
+    "Layer 0, the Source layer, contains SNP nodes. These are genetic variants from the GWAS catalog and eQTL studies, marked as anchors for directionality.",
+    "Layer 1, the Regulatory layer, contains gene nodes. Each gene has over 20 attributes including expression levels, ACE scores, essentiality tags, and causal tier classification.",
+    "Layer 2, the Program layer, contains pathways from REACTOME, KEGG, and Gene Ontology, plus cell types from Bisque deconvolution.",
+    "Layer 3, the Trait layer, contains a single Disease Activity node representing the clinical outcome.",
+    "Five distinct edge types connect these layers: SNP to Gene via genetic regulation, Gene to Gene via inferred regulation, Gene to Pathway via program membership, Gene to Disease as phenotype drivers, and Disease to Gene for reactive biomarkers.",
+    "This layered architecture enforces a biological hierarchy where information flows from genetic variants through gene regulation and pathway programs to disease outcomes."
+  ],
+  // Scene 4: Evidence Weight System
+  [
+    "Each evidence type carries a calibrated weight reflecting its strength for establishing causality.",
+    "Mendelian Randomization carries the highest weight at 0.95, as it uses genetic instruments to establish causal relationships.",
+    "GWAS and SIGNOR are both weighted at 0.90, representing genome-wide significance and curated physical interactions respectively.",
+    "CRISPR perturbation and eQTL studies are weighted at 0.85, providing experimental and expression evidence.",
+    "Database curation from REACTOME and KEGG carries a weight of 0.80.",
+    "Temporal evidence including Granger causality is weighted at 0.65.",
+    "Statistical co-expression, the weakest evidence type, is weighted at just 0.35.",
+    "The key innovation is the Bayesian confidence aggregation formula: C final equals 1 minus the product of 1 minus C current and 1 minus C new.",
+    "This formula is monotonic, meaning evidence can only increase confidence. It's sub-additive, with diminishing returns near 1. And it's capped at 0.99 to prevent degenerate certainty claims."
+  ],
+  // Scene 5: Skeleton Construction
+  [
+    "Skeleton construction proceeds in 5 steps.",
+    "Step 1 creates SNP source nodes from the union of GWAS and eQTL SNPs, each typed by its evidence source.",
+    "Step 2 creates gene regulatory nodes with over 20 attributes per gene, including the critical causal tier classification.",
+    "Step 3 creates program nodes for pathways and cell types, organized by ontology hierarchy.",
+    "Step 4 adds the single Disease Activity trait node as the terminal sink.",
+    "Step 5 constructs edges. Co-expression edges are created for gene pairs with correlation above 0.4. Pathway membership edges link genes to their annotated pathways with DATABASE weight of 0.80. Cell marker edges connect genes to their dominant cell types from deconvolution.",
+    "For co-expression, the confidence score is calculated as the scaled correlation times the statistical weight."
+  ],
+  // Scene 6: Patient-Level DAG
+  [
+    "Patient-level DAG instantiation is where individual biology is captured.",
+    "The process follows 5 steps.",
+    "First, expression processing applies a log1p transform to normalize raw counts.",
+    "Second, z-scores are computed per gene per sample as x minus mean divided by standard deviation.",
+    "Third, activity gating applies dual thresholds. Prior genes, those with GWAS hits or strong ACE scores, use a lower threshold of 0.75. Default genes use a threshold of 1.0.",
+    "This dual-threshold approach is critical: it preserves weak-but-causal signals from genetically anchored genes while filtering out noise from other genes.",
+    "Fourth, program activity scores are computed as the mean z-score of member genes, with programs active if the absolute score exceeds 0.5.",
+    "Fifth, the patient DAG is extracted as a subgraph of active nodes only.",
+    "Typically, 30 to 70 percent of skeleton nodes survive per patient, creating a personalized view of causal biology."
+  ],
+  // Scene 7: Consensus Aggregation
+  [
+    "Consensus aggregation merges all patient DAGs into a single consensus graph.",
+    "The algorithm iterates through every edge in every patient DAG, tracking occurrence count, weight sums, evidence unions, and confidence score sums.",
+    "An edge enters the consensus only if its frequency exceeds the consensus threshold of 0.20.",
+    "The final confidence for each edge combines the average confidence across patients with a frequency bonus, using the Bayesian aggregation formula.",
+    "After initial aggregation, three critical post-processing steps follow.",
+    "First, phenotype arbitration classifies genes as causal drivers or reactive biomarkers.",
+    "Second, prior injection adds evidence from MR, eQTL, SIGNOR, and Granger causality.",
+    "Third, five advanced constraint rules enforce biological validity.",
+    "Finally, all evidence sets are converted to lists for JSON serialization."
+  ],
+  // Scene 8: Phenotype Arbitration
+  [
+    "Phenotype arbitration answers a fundamental question: does a gene cause disease, or does disease cause the gene's expression change?",
+    "This is the critical driver versus biomarker classification.",
+    "A gene is classified as a causal driver if it has ANY of the following: a GWAS hit, Mendelian Randomization evidence, or a strong perturbation ACE score below minus 0.1.",
+    "For drivers, the edge direction is Gene to Disease, with mechanism 'causal disease driver' and evidence 'causal anchor supported'.",
+    "If any reverse edge exists from Disease to Gene, it is immediately removed.",
+    "A gene without these causal anchors is classified as a reactive biomarker. Its edge is reversed to Disease to Gene, indicating that expression changes are a consequence of disease, not a cause.",
+    "The same logic applies to program nodes: pathways driven by Validated Driver genes point toward disease, while others are classified as disease-associated."
+  ],
+  // Scene 9: Prior Injection
+  [
+    "The prior injection pipeline integrates four types of external evidence.",
+    "First, Mendelian Randomization evidence. For each gene with MR results, the mechanism reflects the beta direction. P-value scaling rewards stronger significance. The confidence formula uses the MR weight of 0.95 times a p-value scalar. Crucially, any reverse edge is removed.",
+    "Second, eQTL edge injection creates SNP-to-Gene edges. The base probability uses the eQTL weight of 0.85. If a gene appears in both GWAS and eQTL, a co-localization boost massively increases confidence through Bayesian aggregation with the GWAS weight.",
+    "Third, SIGNOR interactions are seeded with low confidence as new edges, or added as supporting evidence to existing edges. The full SIGNOR boost is applied later in constraint step 5.",
+    "Fourth, Granger causality edges are added for significant temporal pairs. A special one-node rescue mechanism recovers missing partner nodes from the skeleton when a highly significant Granger edge has only one endpoint in the consensus."
+  ],
+  // Scene 10: 5 Constraints
+  [
+    "Five advanced constraint rules enforce biological validity in the final DAG.",
+    "Rule 1: Genetic Anchor Flow. When a GWAS root connects to a non-root gene, the forward edge gets boosted by the GWAS weight, while the reverse edge is penalized and marked as a potential feedback loop.",
+    "Rule 2: Hybrid Temporal Arbitration. This combines Granger causality with impulse-response peak timing. When both agree, the reverse edge is removed and the forward edge receives a synergy bonus. Individual temporal signals provide proportional support.",
+    "Rule 3: Perturbation Asymmetry. When one gene has a strong driver ACE below minus 0.1 and the other doesn't, with sufficient delta above 0.2, the direction is enforced from driver to effector. The reverse edge is removed.",
+    "Rule 4: Cellular Context Veto. Edges between genes in different cell types are removed unless they represent ligand-receptor pairs, which are retyped as paracrine signaling.",
+    "Rule 5: SIGNOR Arbitration. Curated SIGNOR interactions receive the full 0.90 confidence boost and their reverse edges are removed, as curated direction takes precedence."
+  ],
+  // Scene 11: Bayesian Confidence
+  [
+    "The Bayesian confidence aggregation formula is the mathematical heart of the entire framework.",
+    "C final equals 1 minus the product of 1 minus C current times 1 minus C new.",
+    "This formula has four key properties.",
+    "It is monotonic: adding evidence can only increase confidence, never decrease it.",
+    "It is sub-additive: returns diminish as confidence approaches 1. Two sources of 0.5 yield 0.75, not 1.0.",
+    "It is order-independent: the result is the same regardless of processing order.",
+    "And it is bounded: inputs are clamped to the range 0 to 0.99, preventing degenerate certainty.",
+    "Four confidence labels map to score ranges. Very High for 0.85 and above. High for 0.65 and above. Medium for 0.40 and above. And Low for anything below 0.40.",
+    "As a concrete example: combining GWAS at 0.90, eQTL at 0.85, and SIGNOR at 0.90 gives 1 minus 0.1 times 0.15 times 0.1, which equals 0.9985, capped at 0.99."
+  ],
+  // Scene 12: MR Instrument Selection
+  [
+    "Now we enter Module 2: the MR Validator.",
+    "Mendelian Randomization uses genetic variants as instrumental variables to test causal relationships.",
+    "The prepare instruments function implements a rigorous selection pipeline.",
+    "First, variants are filtered by gene and by genome-wide significance at 5 times 10 to the minus 8.",
+    "Next, instrument strength is computed. The R-squared measures variance explained, and the F-statistic tests instrument strength. Only instruments with F greater than or equal to 10 are retained, following the standard weak instrument threshold.",
+    "Instruments are then sorted by F-statistic and pruned for linkage disequilibrium.",
+    "The MR Validator configuration includes 10 parameters controlling every aspect of the analysis, from bootstrap iterations at 1000 to MR-PRESSO simulations at 1000.",
+    "The four instrumental variable assumptions are enforced: relevance through F-statistic filtering, independence through LD pruning, exclusion restriction through the Egger intercept test, and monotonicity which is assumed."
+  ],
+  // Scene 13: 5 MR Methods
+  [
+    "Five distinct Mendelian Randomization methods are applied to each gene.",
+    "The Inverse Variance Weighted method is the primary estimator. It weights each instrument by the inverse of its outcome variance and computes a pooled causal estimate. It assumes all instruments are valid.",
+    "MR-Egger adds an intercept to the weighted regression. A non-zero intercept detects directional pleiotropy. It requires the Instrument Strength Independent of Direct Effect assumption and needs at least 4 instruments.",
+    "The Weighted Median computes the weighted median of per-instrument ratio estimates. It remains valid if at least 50 percent of the weight comes from valid instruments. Standard errors are estimated through 1000 bootstrap iterations.",
+    "The Weighted Mode uses kernel density estimation to find the most common causal estimate. It remains valid if the largest cluster of similar ratios comes from valid instruments.",
+    "MR-PRESSO detects outlier instruments through a permutation-based global test. If the global test is significant, individual outliers are identified by residual magnitude, and the IVW is re-run with clean instruments.",
+    "Together, these five methods provide robustness under different violation scenarios."
+  ],
+  // Scene 14: Sensitivity Analyses
+  [
+    "Four sensitivity analyses complement the five MR methods.",
+    "Cochran's Q tests whether instrument-specific causal estimates are homogeneous. The Q statistic follows a chi-squared distribution. Significant heterogeneity at p below 0.05 suggests invalid instruments or pleiotropy. The I-squared statistic quantifies the proportion of variability due to heterogeneity.",
+    "The Steiger directionality test confirms that the causal direction flows from exposure to outcome. It compares the variance explained in exposure versus outcome. This test is critical: an edge cannot be validated without correct direction.",
+    "Leave-one-out analysis checks if any single instrument is driving the entire result. Each instrument is excluded in turn, and IVW is re-run on the remaining set. A dramatic change in the estimate upon excluding one instrument suggests that instrument may be invalid.",
+    "The Egger intercept test, derived from the MR-Egger regression, tests for directional pleiotropy. A non-zero intercept at p below 0.05 indicates that the IVW estimate may be biased, and the Egger slope should be preferred instead."
+  ],
+  // Scene 15: Validation Decision Logic
+  [
+    "The validation decision logic brings everything together.",
+    "The validate edge function first prepares instruments. If fewer than 3 instruments pass the F-statistic filter, validation fails immediately.",
+    "Next, all 5 MR methods are run: IVW, MR-Egger, Weighted Median, Weighted Mode, and MR-PRESSO.",
+    "Then all sensitivity tests are executed: Cochran's Q, Steiger directionality, and leave-one-out.",
+    "The validation decision requires three conditions. The IVW p-value must be below 0.05. At least 2 of the 4 primary methods must be independently significant. And the Steiger test must confirm correct causal direction.",
+    "A separate sensitivity flag requires all four conditions: no heterogeneity, no pleiotropy, directional consistency across methods, and correct Steiger direction.",
+    "This multi-layer decision logic ensures that validated edges have robust support from multiple independent analytical frameworks."
+  ],
+  // Scene 16: DAG Edge Annotation
+  [
+    "The validate dag edges function applies MR validation back to the consensus DAG.",
+    "It targets all edges from regulatory genes to the Disease Activity node.",
+    "For each gene, it runs the full validation pipeline and annotates the edge with 5 attributes: mr validated as a boolean, mr beta with the IVW estimate, mr p-val with the IVW p-value, mr method set to IVW, and mr sensitivity passed.",
+    "If the edge passes validation, the string 'mendelian randomization validated' is added to the evidence list.",
+    "The function returns both the annotated DAG and a summary dictionary with total tested, validated count, failed count, and sensitivity pass count.",
+    "Per-gene results include the complete output of all 5 methods and all sensitivity analyses."
+  ],
+  // Scene 17: Data Flow Diagram
+  [
+    "Let's trace the complete data flow from raw inputs to validated output.",
+    "Raw data from 9 sources enters the DataLoader, which performs gene resolution and synonym mapping.",
+    "The skeleton builder creates the 4-layer graph with co-expression edges.",
+    "Patient instantiation creates individual z-score filtered subgraphs for each sample.",
+    "Consensus aggregation merges patient DAGs with frequency filtering and Bayesian confidence.",
+    "Post-aggregation applies phenotype arbitration, prior injection, and 5 constraint rules.",
+    "Finally, the MR Validator annotates all Gene-to-Disease edges with validation status.",
+    "The output is available in three formats: a JSON file with full node-link graph data, CSV files for nodes and edges, and the in-memory NetworkX DiGraph passed directly to Phase 2.",
+    "The validated consensus DAG feeds into all downstream phases of the BiRAGAS pipeline."
+  ],
+  // Scene 18: Attribute Registry
+  [
+    "The DAG attribute registry catalogs every piece of information attached to nodes and edges.",
+    "Source layer nodes carry layer, type, anchor status, and evidence source attributes.",
+    "Regulatory layer nodes carry over 20 attributes including expression baselines, log2 fold change, GWAS status, genetic confidence, ACE scores, essentiality tags, toxicity risk, therapeutic alignment, and causal tier classification.",
+    "Program layer nodes carry pathway identifiers, p-values, FDR values, regulation direction, and ontology classification.",
+    "Edge attributes include weight, edge type, mechanism, evidence list, confidence score, frequency, and all MR annotations.",
+    "Evidence tags span the full range from transcriptomic coexpression to spatiotemporal causality verified.",
+    "This rich attribute set enables all downstream modules to make informed decisions without re-computing primary evidence."
+  ],
+  // Scene 19: Summary
+  [
+    "To summarize Phase 1's key innovations.",
+    "First, multi-modal integration: 9 heterogeneous data streams unified into a single causal graph through weighted Bayesian aggregation.",
+    "Second, patient-level resolution: individual DAGs capture per-patient biology with dual z-score thresholds before consensus merging.",
+    "Third, causal direction enforcement: 5 constraint rules resolve driver versus biomarker ambiguity using genetic, temporal, and perturbation evidence.",
+    "Fourth, comprehensive MR validation: 5 methods plus 4 sensitivity analyses provide robust causal inference under varied assumption relaxations.",
+    "Fifth, the Bayesian confidence framework ensures monotonic, sub-additive evidence accumulation capped at 0.99.",
+    "Sixth, the pipeline is fully automated: from raw files to validated causal graph with zero manual curation.",
+    "The output is a validated consensus causal DAG with over 20 node attributes, over 10 edge attributes, Bayesian confidence scores, and MR validation annotations, ready for Phase 2 network analysis and all downstream modules.",
+    "Thank you for watching. This has been Phase 1: Causality Foundation of the BiRAGAS framework by Ayass Bioscience."
+  ],
+];
+
+// ── SCENE DURATIONS ──
+const sceneDurs = [18,35,38,38,35,35,38,38,38,40,42,35,38,45,40,38,35,35,35,30];
+
+// ── PARTICLE BACKGROUND ──
+const canvas = document.getElementById('particles');
+const ctx = canvas.getContext('2d');
+let particles = [];
+function resizeCanvas(){canvas.width=window.innerWidth;canvas.height=window.innerHeight}
+window.addEventListener('resize',resizeCanvas);resizeCanvas();
+function initParticles(){
+  particles=[];
+  const n=Math.min(80,Math.floor(canvas.width*canvas.height/15000));
+  for(let i=0;i<n;i++) particles.push({
+    x:Math.random()*canvas.width,y:Math.random()*canvas.height,
+    vx:(Math.random()-.5)*.3,vy:(Math.random()-.5)*.3,
+    r:Math.random()*1.5+.5,a:Math.random()*.4+.1
+  });
+}
+initParticles();
+function drawParticles(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  for(const p of particles){
+    p.x+=p.vx;p.y+=p.vy;
+    if(p.x<0)p.x=canvas.width;if(p.x>canvas.width)p.x=0;
+    if(p.y<0)p.y=canvas.height;if(p.y>canvas.height)p.y=0;
+    ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fillStyle=`rgba(0,150,214,${p.a})`;ctx.fill();
+  }
+  for(let i=0;i<particles.length;i++){
+    for(let j=i+1;j<particles.length;j++){
+      const dx=particles[i].x-particles[j].x,dy=particles[i].y-particles[j].y;
+      const d=Math.sqrt(dx*dx+dy*dy);
+      if(d<150){
+        ctx.beginPath();ctx.moveTo(particles[i].x,particles[i].y);ctx.lineTo(particles[j].x,particles[j].y);
+        ctx.strokeStyle=`rgba(0,150,214,${.08*(1-d/150)})`;ctx.stroke();
+      }
+    }
+  }
+  requestAnimationFrame(drawParticles);
+}
+drawParticles();
+
+// ── PRESENTATION ENGINE ──
+const scenes = document.querySelectorAll('.scene');
+const totalScenes = scenes.length;
+let currentScene = 0;
+let isPlaying = false;
+let sceneTimer = null;
+let sceneElapsed = 0;
+let speedMultiplier = 1;
+let voiceEnabled = true;
+let subtitlesEnabled = true;
+let voiceSpeaking = false;
+let speechGeneration = 0;
+
+const playBtn = document.getElementById('play-btn');
+const prevBtn = document.getElementById('prev-btn');
+const nextBtn = document.getElementById('next-btn');
+const timelineFill = document.getElementById('timeline-fill');
+const timeDisplay = document.getElementById('time-display');
+const sceneCounter = document.getElementById('scene-counter');
+const speedBtn = document.getElementById('speed-btn');
+const voiceBtn = document.getElementById('voice-btn');
+const subBtn = document.getElementById('sub-btn');
+const fsBtn = document.getElementById('fs-btn');
+const subtitleBar = document.getElementById('subtitle-bar');
+const timeline = document.getElementById('timeline');
+const voiceMenu = document.getElementById('voice-menu');
+
+function getTotalTime(){return sceneDurs.reduce((a,b)=>a+b,0)}
+function getElapsedTotal(){
+  let t=0;for(let i=0;i<currentScene;i++)t+=sceneDurs[i];
+  return t+sceneElapsed;
+}
+function formatTime(s){return Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0')}
+
+function updateUI(){
+  const total=getTotalTime();
+  const elapsed=getElapsedTotal();
+  timelineFill.style.width=(elapsed/total*100)+'%';
+  timeDisplay.textContent=formatTime(elapsed)+' / '+formatTime(total);
+  sceneCounter.textContent=(currentScene+1)+' / '+totalScenes;
+  playBtn.innerHTML=isPlaying?'&#9646;&#9646;':'&#9654;';
+}
+
+function goToScene(idx){
+  if(idx<0||idx>=totalScenes)return;
+  speechGeneration++;
+  window.speechSynthesis.cancel();
+  voiceSpeaking=false;
+  scenes[currentScene].classList.remove('active');
+  currentScene=idx;
+  sceneElapsed=0;
+  scenes[currentScene].classList.add('active');
+  animateScene(currentScene);
+  updateUI();
+  if(voiceEnabled)speakScene(currentScene);
+}
+
+function animateScene(idx){
+  const els=scenes[idx].querySelectorAll('.anim');
+  els.forEach(el=>{
+    el.style.animation='none';
+    el.offsetHeight;
+    const d=parseFloat(el.dataset.d)||0;
+    el.style.animationDelay=d+'s';
+    const aMap={fu:'fadeUp',fl:'fadeLeft',fr:'fadeRight',si:'scaleIn',sd:'slideDown'};
+    el.style.animationName=aMap[el.dataset.a]||'fadeUp';
+    el.style.animationDuration='.7s';
+    el.style.animationFillMode='both';
+  });
+}
+
+function startTimer(){
+  if(sceneTimer)clearInterval(sceneTimer);
+  sceneTimer=setInterval(()=>{
+    sceneElapsed+=0.1*speedMultiplier;
+    const dur=sceneDurs[currentScene];
+    if(sceneElapsed>=dur && !voiceSpeaking){
+      if(currentScene<totalScenes-1){goToScene(currentScene+1)}
+      else{pause()}
+    }
+    updateUI();
+  },100);
+}
+
+function play(){isPlaying=true;startTimer();updateUI();if(voiceEnabled&&!voiceSpeaking)speakScene(currentScene)}
+function pause(){isPlaying=false;if(sceneTimer)clearInterval(sceneTimer);sceneTimer=null;updateUI()}
+function togglePlay(){isPlaying?pause():play()}
+
+// ── VOICE ENGINE (sentence-by-sentence) ──
+let selectedVoice = null;
+function loadVoices(){
+  const voices = speechSynthesis.getVoices();
+  const preferred = ['Evan','Daniel','Aaron','Ava','Samantha','Alex','Karen','Moira','Rishi'];
+  const enhanced = voices.filter(v=>v.lang.startsWith('en')&&(v.name.includes('Enhanced')||v.name.includes('Premium')));
+  const english = voices.filter(v=>v.lang.startsWith('en'));
+  for(const name of preferred){
+    const found = enhanced.find(v=>v.name.includes(name)) || english.find(v=>v.name.includes(name));
+    if(found){selectedVoice=found;break}
+  }
+  if(!selectedVoice && english.length) selectedVoice = english[0];
+  buildVoiceMenu(voices);
+}
+speechSynthesis.onvoiceschanged = loadVoices;
+loadVoices();
+
+function buildVoiceMenu(voices){
+  const en = voices.filter(v=>v.lang.startsWith('en'));
+  voiceMenu.innerHTML='<div style="color:var(--accent);font-weight:700;margin-bottom:8px;font-size:13px">Select Voice</div>';
+  en.forEach(v=>{
+    const label=document.createElement('label');
+    const radio=document.createElement('input');
+    radio.type='radio';radio.name='voice';radio.value=v.name;
+    if(v===selectedVoice)radio.checked=true;
+    radio.onchange=()=>{selectedVoice=v};
+    label.appendChild(radio);
+    label.appendChild(document.createTextNode(v.name));
+    voiceMenu.appendChild(label);
+  });
+}
+
+function speakScene(idx){
+  speechGeneration++;
+  const gen=speechGeneration;
+  window.speechSynthesis.cancel();
+  voiceSpeaking=false;
+  const sentences=narration[idx];
+  if(!sentences||!sentences.length)return;
+  let i=0;
+  function speakNext(){
+    if(gen!==speechGeneration)return;
+    if(i>=sentences.length){voiceSpeaking=false;return}
+    const text=sentences[i];
+    const utt=new SpeechSynthesisUtterance(text);
+    if(selectedVoice)utt.voice=selectedVoice;
+    // Natural prosody variation
+    let rate=0.92;
+    if(i===0)rate=0.88;
+    else if(i===sentences.length-1)rate=0.88;
+    else rate=0.92+(Math.random()-.5)*0.06;
+    utt.rate=rate*speedMultiplier;
+    let pitch=1.0+(Math.random()-.5)*0.06;
+    if(text.endsWith('?'))pitch+=0.06;
+    if(text.endsWith('.') && i===sentences.length-1)pitch-=0.04;
+    utt.pitch=pitch;
+    utt.onstart=()=>{
+      voiceSpeaking=true;
+      if(subtitlesEnabled){subtitleBar.textContent=text;subtitleBar.classList.add('visible')}
+    };
+    utt.onend=()=>{
+      if(gen!==speechGeneration)return;
+      i++;
+      if(i>=sentences.length){
+        voiceSpeaking=false;
+        subtitleBar.classList.remove('visible');
+        return;
+      }
+      // Breathing pause
+      let pause=200;
+      if(text.endsWith('?'))pause=350;
+      else if(text.length>100)pause=300;
+      setTimeout(()=>speakNext(),pause);
+    };
+    utt.onerror=()=>{voiceSpeaking=false;subtitleBar.classList.remove('visible')};
+    speechSynthesis.speak(utt);
+  }
+  speakNext();
+}
+
+// ── CONTROLS ──
+playBtn.onclick=togglePlay;
+prevBtn.onclick=()=>{if(currentScene>0)goToScene(currentScene-1)};
+nextBtn.onclick=()=>{if(currentScene<totalScenes-1)goToScene(currentScene+1)};
+
+timeline.onclick=(e)=>{
+  const rect=timeline.getBoundingClientRect();
+  const pct=(e.clientX-rect.left)/rect.width;
+  const totalTime=getTotalTime();
+  let target=pct*totalTime;
+  let sum=0;
+  for(let i=0;i<totalScenes;i++){
+    if(sum+sceneDurs[i]>target){goToScene(i);sceneElapsed=target-sum;break}
+    sum+=sceneDurs[i];
+  }
+};
+
+const speeds=[0.5,0.75,1,1.25,1.5,2];
+let speedIdx=2;
+speedBtn.onclick=()=>{
+  speedIdx=(speedIdx+1)%speeds.length;
+  speedMultiplier=speeds[speedIdx];
+  speedBtn.textContent=speedMultiplier+'x';
+};
+
+voiceBtn.onclick=(e)=>{
+  if(e.shiftKey){voiceMenu.classList.toggle('show');return}
+  voiceEnabled=!voiceEnabled;
+  voiceBtn.classList.toggle('active',voiceEnabled);
+  if(!voiceEnabled){speechSynthesis.cancel();voiceSpeaking=false;subtitleBar.classList.remove('visible')}
+  else if(isPlaying)speakScene(currentScene);
+};
+
+subBtn.onclick=()=>{
+  subtitlesEnabled=!subtitlesEnabled;
+  subBtn.classList.toggle('active',subtitlesEnabled);
+  if(!subtitlesEnabled)subtitleBar.classList.remove('visible');
+};
+
+fsBtn.onclick=()=>{
+  if(!document.fullscreenElement)document.documentElement.requestFullscreen();
+  else document.exitFullscreen();
+};
+
+document.addEventListener('keydown',(e)=>{
+  if(e.code==='Space'){e.preventDefault();togglePlay()}
+  else if(e.code==='ArrowRight')nextBtn.click();
+  else if(e.code==='ArrowLeft')prevBtn.click();
+  else if(e.code==='KeyV')voiceBtn.click();
+  else if(e.code==='KeyC')subBtn.click();
+  else if(e.code==='KeyF')fsBtn.click();
+  else if(e.code==='KeyM'){voiceEnabled=false;speechSynthesis.cancel();voiceSpeaking=false;voiceBtn.classList.remove('active');subtitleBar.classList.remove('visible')}
+});
+
+// Close voice menu on outside click
+document.addEventListener('click',(e)=>{
+  if(!voiceMenu.contains(e.target)&&e.target!==voiceBtn)voiceMenu.classList.remove('show');
+});
+
+// Init
+animateScene(0);
+updateUI();
+</script>
+</body>
+</html>
