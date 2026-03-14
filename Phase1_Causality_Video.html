@@ -1230,17 +1230,19 @@ function updateUI(){
 
 function goToScene(idx){
   if(idx<0||idx>=totalScenes)return;
+  _stopped=true;
   speechGeneration++;
   voiceSpeaking=false;
   stopSpeechKeepAlive();
-  setTimeout(()=>{ window.speechSynthesis.cancel(); },0);
+  try{window.speechSynthesis.cancel()}catch(e){}
   scenes[currentScene].classList.remove('active');
   currentScene=idx;
   sceneElapsed=0;
   scenes[currentScene].classList.add('active');
   animateScene(currentScene);
+  _stopped=false;
   updateUI();
-  if(voiceEnabled)speakScene(currentScene);
+  if(voiceEnabled && isPlaying) setTimeout(()=>speakScene(currentScene),50);
 }
 
 function animateScene(idx){
@@ -1270,8 +1272,12 @@ function startTimer(){
   },100);
 }
 
+// Global stop flag — checked by every callback before doing ANYTHING
+let _stopped = true;
+
 function play(){
   isPlaying=true;
+  _stopped=false;
   // Chrome requires a user-gesture-triggered speech call to unlock speechSynthesis
   if(!window._speechUnlocked){
     window._speechUnlocked=true;
@@ -1282,18 +1288,16 @@ function play(){
   }
   startTimer();
   updateUI();
-  if(voiceEnabled&&!voiceSpeaking)speakScene(currentScene);
+  if(voiceEnabled&&!voiceSpeaking) setTimeout(()=>speakScene(currentScene),50);
 }
 function pause(){
   isPlaying=false;
-  if(sceneTimer)clearInterval(sceneTimer);
-  sceneTimer=null;
-  // Increment generation FIRST so all callbacks become stale
-  speechGeneration++;
+  _stopped=true;
   voiceSpeaking=false;
+  if(sceneTimer){clearInterval(sceneTimer);sceneTimer=null}
   stopSpeechKeepAlive();
-  // Cancel speech AFTER generation bump — callbacks will see stale gen and bail
-  setTimeout(()=>{ window.speechSynthesis.cancel(); },0);
+  speechGeneration++;
+  try{window.speechSynthesis.cancel()}catch(e){}
   subtitleBar.classList.remove('visible');
   updateUI();
 }
@@ -1348,9 +1352,10 @@ function stopSpeechKeepAlive(){
 }
 
 function speakScene(idx){
+  if(_stopped) return;
   speechGeneration++;
   const gen=speechGeneration;
-  window.speechSynthesis.cancel();
+  try{window.speechSynthesis.cancel()}catch(e){}
   voiceSpeaking=false;
   stopSpeechKeepAlive();
   const sentences=narration[idx];
@@ -1365,8 +1370,10 @@ function speakScene(idx){
   let i=0;
   startSpeechKeepAlive();
 
+  function isCanceled(){ return _stopped || gen!==speechGeneration; }
+
   function speakNext(){
-    if(gen!==speechGeneration){stopSpeechKeepAlive();return}
+    if(isCanceled()){stopSpeechKeepAlive();voiceSpeaking=false;return}
     if(i>=sentences.length){voiceSpeaking=false;subtitleBar.classList.remove('visible');stopSpeechKeepAlive();return}
     const text=sentences[i];
     const utt=new SpeechSynthesisUtterance(text);
@@ -1383,14 +1390,13 @@ function speakScene(idx){
     utt.pitch=Math.max(0.5, Math.min(2, pitch));
     utt.volume=1;
 
-    let started=false;
     utt.onstart=()=>{
-      started=true;
+      if(isCanceled())return;
       voiceSpeaking=true;
       if(subtitlesEnabled){subtitleBar.textContent=text;subtitleBar.classList.add('visible')}
     };
     utt.onend=()=>{
-      if(gen!==speechGeneration)return;
+      if(isCanceled()){voiceSpeaking=false;return}
       i++;
       if(i>=sentences.length){
         voiceSpeaking=false;
@@ -1402,31 +1408,23 @@ function speakScene(idx){
       let pauseMs=200;
       if(text.endsWith('?'))pauseMs=350;
       else if(text.length>100)pauseMs=300;
-      setTimeout(()=>{if(gen===speechGeneration)speakNext()},pauseMs);
+      setTimeout(()=>{if(!isCanceled())speakNext()},pauseMs);
     };
     utt.onerror=(e)=>{
-      // Ignore canceled errors (from pause/scene-change) and stale generations
-      if(e.error==='canceled'||e.error==='interrupted'||gen!==speechGeneration){return}
-      console.warn('Speech error:',e.error,text.substring(0,40));
-      // On genuine error, try to continue with next sentence
+      // ALWAYS bail if stopped or stale
+      if(isCanceled()){voiceSpeaking=false;return}
+      // Ignore cancel/interrupt errors
+      if(e.error==='canceled'||e.error==='interrupted'){voiceSpeaking=false;return}
+      console.warn('Speech error:',e.error);
       i++;
-      voiceSpeaking=i<sentences.length;
-      if(i<sentences.length){
-        setTimeout(()=>{if(gen===speechGeneration)speakNext()},200);
+      if(!isCanceled() && i<sentences.length){
+        setTimeout(()=>{if(!isCanceled())speakNext()},200);
       } else {
+        voiceSpeaking=false;
         subtitleBar.classList.remove('visible');
         stopSpeechKeepAlive();
       }
     };
-
-    // Safety: if onstart doesn't fire within 1s, force-continue
-    setTimeout(()=>{
-      if(!started && gen===speechGeneration && !speechSynthesis.speaking){
-        console.warn('Speech not started, retrying...');
-        speechSynthesis.cancel();
-        setTimeout(()=>{if(gen===speechGeneration)speechSynthesis.speak(utt)},100);
-      }
-    },1000);
 
     speechSynthesis.speak(utt);
   }
