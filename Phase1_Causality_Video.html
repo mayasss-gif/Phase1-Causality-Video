@@ -1269,8 +1269,29 @@ function startTimer(){
   },100);
 }
 
-function play(){isPlaying=true;startTimer();updateUI();if(voiceEnabled&&!voiceSpeaking)speakScene(currentScene)}
-function pause(){isPlaying=false;if(sceneTimer)clearInterval(sceneTimer);sceneTimer=null;updateUI()}
+function play(){
+  isPlaying=true;
+  // Chrome requires a user-gesture-triggered speech call to unlock speechSynthesis
+  if(!window._speechUnlocked){
+    window._speechUnlocked=true;
+    const dummy=new SpeechSynthesisUtterance('');
+    dummy.volume=0;
+    speechSynthesis.speak(dummy);
+    speechSynthesis.cancel();
+  }
+  startTimer();
+  updateUI();
+  if(voiceEnabled&&!voiceSpeaking)speakScene(currentScene);
+}
+function pause(){
+  isPlaying=false;
+  if(sceneTimer)clearInterval(sceneTimer);
+  sceneTimer=null;
+  speechGeneration++;
+  window.speechSynthesis.cancel();
+  voiceSpeaking=false;
+  updateUI();
+}
 function togglePlay(){isPlaying?pause():play()}
 
 // ── VOICE ENGINE (sentence-by-sentence) ──
@@ -1305,17 +1326,43 @@ function buildVoiceMenu(voices){
   });
 }
 
+// Chrome pause bug workaround: keep-alive timer
+let _speechKeepAlive=null;
+function startSpeechKeepAlive(){
+  if(_speechKeepAlive)clearInterval(_speechKeepAlive);
+  _speechKeepAlive=setInterval(()=>{
+    if(speechSynthesis.speaking&&!speechSynthesis.paused){
+      // Chrome workaround: pause+resume prevents the 15s timeout
+      speechSynthesis.pause();
+      speechSynthesis.resume();
+    }
+  },5000);
+}
+function stopSpeechKeepAlive(){
+  if(_speechKeepAlive){clearInterval(_speechKeepAlive);_speechKeepAlive=null}
+}
+
 function speakScene(idx){
   speechGeneration++;
   const gen=speechGeneration;
   window.speechSynthesis.cancel();
   voiceSpeaking=false;
+  stopSpeechKeepAlive();
   const sentences=narration[idx];
   if(!sentences||!sentences.length)return;
+
+  // Ensure voices are loaded
+  if(!selectedVoice){
+    const voices=speechSynthesis.getVoices();
+    if(voices.length)loadVoices();
+  }
+
   let i=0;
+  startSpeechKeepAlive();
+
   function speakNext(){
-    if(gen!==speechGeneration)return;
-    if(i>=sentences.length){voiceSpeaking=false;return}
+    if(gen!==speechGeneration){stopSpeechKeepAlive();return}
+    if(i>=sentences.length){voiceSpeaking=false;subtitleBar.classList.remove('visible');stopSpeechKeepAlive();return}
     const text=sentences[i];
     const utt=new SpeechSynthesisUtterance(text);
     if(selectedVoice)utt.voice=selectedVoice;
@@ -1324,12 +1371,16 @@ function speakScene(idx){
     if(i===0)rate=0.88;
     else if(i===sentences.length-1)rate=0.88;
     else rate=0.92+(Math.random()-.5)*0.06;
-    utt.rate=rate*speedMultiplier;
+    utt.rate=Math.max(0.5, rate*speedMultiplier);
     let pitch=1.0+(Math.random()-.5)*0.06;
     if(text.endsWith('?'))pitch+=0.06;
     if(text.endsWith('.') && i===sentences.length-1)pitch-=0.04;
-    utt.pitch=pitch;
+    utt.pitch=Math.max(0.5, Math.min(2, pitch));
+    utt.volume=1;
+
+    let started=false;
     utt.onstart=()=>{
+      started=true;
       voiceSpeaking=true;
       if(subtitlesEnabled){subtitleBar.textContent=text;subtitleBar.classList.add('visible')}
     };
@@ -1339,15 +1390,38 @@ function speakScene(idx){
       if(i>=sentences.length){
         voiceSpeaking=false;
         subtitleBar.classList.remove('visible');
+        stopSpeechKeepAlive();
         return;
       }
       // Breathing pause
-      let pause=200;
-      if(text.endsWith('?'))pause=350;
-      else if(text.length>100)pause=300;
-      setTimeout(()=>speakNext(),pause);
+      let pauseMs=200;
+      if(text.endsWith('?'))pauseMs=350;
+      else if(text.length>100)pauseMs=300;
+      setTimeout(()=>{if(gen===speechGeneration)speakNext()},pauseMs);
     };
-    utt.onerror=()=>{voiceSpeaking=false;subtitleBar.classList.remove('visible')};
+    utt.onerror=(e)=>{
+      console.warn('Speech error:',e.error,text.substring(0,40));
+      // On error, try to continue with next sentence
+      if(gen!==speechGeneration)return;
+      i++;
+      voiceSpeaking=i<sentences.length;
+      if(i<sentences.length){
+        setTimeout(()=>{if(gen===speechGeneration)speakNext()},200);
+      } else {
+        subtitleBar.classList.remove('visible');
+        stopSpeechKeepAlive();
+      }
+    };
+
+    // Safety: if onstart doesn't fire within 1s, force-continue
+    setTimeout(()=>{
+      if(!started && gen===speechGeneration && !speechSynthesis.speaking){
+        console.warn('Speech not started, retrying...');
+        speechSynthesis.cancel();
+        setTimeout(()=>{if(gen===speechGeneration)speechSynthesis.speak(utt)},100);
+      }
+    },1000);
+
     speechSynthesis.speak(utt);
   }
   speakNext();
